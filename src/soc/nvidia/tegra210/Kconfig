@@ -121,6 +121,31 @@ config HAVE_MTC
 	help
 	  Select this option to add emc training firmware
 
+config SC7ENTRY_FILE
+	string "tegra sc7entry firmware filename"
+	default "sc7entry.bin"
+	help
+	  The filename of the sc7entry firmware
+
+config SC7ENTRY_DIRECTORY
+	string "Directory where sc7entry firmware file is located"
+	default "."
+	help
+	  Path to directory where sc7entry firmware file is located.
+
+config WARMBOOT_FILE
+	string "tegra warmboot firmware filename"
+	default "warmboot.bin"
+	help
+	  The filename of the warmboot firmware
+
+config WARMBOOT_DIRECTORY
+	string "Directory where warmboot firmware file is located"
+	default "."
+	help
+	  Path to directory where warmboot firmware file is located.
+
+
 if HAVE_MTC
 
 config MTC_FILE

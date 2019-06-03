@@ -26,7 +26,7 @@
 #include <soc/nvidia/tegra/types.h>
 
 static uintptr_t tz_base_mib;
-static const size_t tz_size_mib = CONFIG_TRUSTZONE_CARVEOUT_SIZE_MB;
+static const size_t tz_size_mib = CONFIG_TRUSTZONE_CARVEOUT_SIZE_MB + 1;
 
 /* returns total amount of DRAM (in MB) from memory controller registers */
 int sdram_size_mb(void)
@@ -258,6 +258,7 @@ void trustzone_region_init(void)
 	 */
 	tz_base_mib = end - tz_size_mib;
 	memory_in_range(&tz_base_mib, &end, CARVEOUT_TZ);
+	tz_base_mib = end - tz_size_mib;
 
 	/*
 	 * IMPORTANT!!!!!
