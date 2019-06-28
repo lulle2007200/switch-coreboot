@@ -680,6 +680,8 @@ static void power_on_partition(unsigned id)
 		while (!(read32(pmc_pwrgate_status_ptr) & bit))
 			;
 
+		/* Unclamp the partition */
+		write32(pmc_remove_clamping_cmd_ptr, bit);
 		/* Wait until clamp is off. */
 		while (read32(pmc_clamp_status_ptr) & bit)
 			;
@@ -1052,13 +1054,15 @@ void lp0_resume(void)
 	 * SCRATCH201[1] is being used to identify CPU PMIC in warmboot code.
 	 * 0 : OVR2
 	 * 1 : MAX77621
+	 * Switch: This scratch isn't set so just use the correct PMIC
 	 */
-	if (read32(pmc_scratch201_ptr) & PMIC_77621)
+	i2c_send(MAX77621_I2C_ADDR, MAX77621_VOUT_DATA);
+	//if (read32(pmc_scratch201_ptr) & PMIC_77621)
 		/* Set CPU rail 0.85V */
-		i2c_send(MAX77621_I2C_ADDR, MAX77621_VOUT_DATA);
-	else
+	//	i2c_send(MAX77621_I2C_ADDR, MAX77621_VOUT_DATA);
+	//else
 		/* Enable GPIO5 on MAX77620 PMIC */
-		i2c_send(MAX77620_I2C_ADDR, MAX77620_GPIO5_DATA);
+	//	i2c_send(MAX77620_I2C_ADDR, MAX77620_GPIO5_DATA);
 
 	/* Disable PWR I2C */
 	write32(clk_rst_rst_dev_h_set_ptr, I2C5_RST);
