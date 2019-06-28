@@ -23,7 +23,7 @@ PHDRS
 ENTRY(lp0_resume)
 SECTIONS
 {
-	. = 0x40020000 - 0x240;
+	. = 0x40010000;
 
 	/*
 	 * The lp0 blob header is built as a static data structure and put
@@ -35,7 +35,7 @@ SECTIONS
 	} : to_load = 0xff
 	.header_end = .;
 
-	. = 0x40020000;
+	. = 0x40010240;
 
 	/* The actual lp0 blob code. */
 	.data_start = .;
