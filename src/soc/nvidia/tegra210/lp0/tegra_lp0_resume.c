@@ -61,6 +61,10 @@ static uint32_t *pinmux_pwr_i2c_scl_ptr = (void *)(PINMUX_BASE + 0xdc);
 static uint32_t *pinmux_pwr_i2c_sda_ptr = (void *)(PINMUX_BASE + 0xe0);
 static uint32_t *pinmux_dvfs_pwm_ptr = (void *)(PINMUX_BASE + 0x184);
 static uint32_t *pinmux_gpio_pa6_ptr = (void *)(PINMUX_BASE + 0x244);
+static uint32_t *pinmux_uart2_tx_ptr = (void *)(PINMUX_BASE + 0xf4);
+static uint32_t *pinmux_uart2_rx_ptr = (void *)(PINMUX_BASE + 0xf8);
+static uint32_t *pinmux_uart2_rts_ptr = (void *)(PINMUX_BASE + 0xfc);
+static uint32_t *pinmux_uart2_cts_ptr = (void *)(PINMUX_BASE + 0x100);
 enum {
 	E_INPUT = 1 << 6,
 	TRISTATE = 1 << 4,
@@ -505,7 +509,9 @@ enum {
 	UART_THR_DLAB = 0x0,
 	UART_IER_DLAB = 0x1,
 	UART_IIR_FCR = 0x2,
-	UART_LCR = 0x3
+	UART_LCR = 0x3,
+	UART_MCR = 0x4,
+	UART_LSR = 0x5
 };
 enum {
 	UART_RATE_115200 = (408000000/115200/16), /* based on 408000000 PLLP */
@@ -534,11 +540,8 @@ static void enable_uart(void)
 	 *  2 : UARTC
 	 *  3 : UARTD
 	 */
-	uart_port = (read32(pmc_odmdata_ptr) >> 15) & 0x7;
-
-	/* Default to UARTA if uart_port is out of range */
-	if (uart_port >= 4)
-		uart_port = 0;
+	// Switch: Hardcode UARTB for now (right joycon rail)
+	uart_port = 1;
 
 	uart_clk_enb_reg = uart_clk_out_enb_regs[uart_port];
 	uart_rst_reg = uart_rst_devices_regs[uart_port];
@@ -546,26 +549,52 @@ static void enable_uart(void)
 	uart_clk_source = uart_clk_source_regs[uart_port];
 	uart_base = uart_base_regs[uart_port];
 
-	/* Enable UART clock */
-	setbits32(uart_mask, uart_clk_enb_reg);
+	/* Setup pinmux for UARTB */
+	write32(pinmux_uart2_tx_ptr, 0);
+	write32(pinmux_uart2_rx_ptr, 0x48);
+	write32(pinmux_uart2_rts_ptr, 0);
+	write32(pinmux_uart2_cts_ptr, 0x44);
 
-	/* Reset and unreset UART */
+	/* Put clock into reset */
 	setbits32(uart_mask, uart_rst_reg);
-	clrbits32(uart_mask, uart_rst_reg);
+
+	/* Disable UART clock */
+	clrbits32(uart_mask, uart_clk_enb_reg);
 
 	/* Program UART clock source: PLLP (408000000) */
 	write32(uart_clk_source, 0);
 
+	/* Enable UART clock */
+	setbits32(uart_mask, uart_clk_enb_reg);
+
+	/* Unreset UART */
+	clrbits32(uart_mask, uart_rst_reg);
+
 	/* Program 115200n8 to the uart port */
 	/* baud-rate of 115200 */
-	write32((uart_base + UART_LCR), LCR_DLAB);
-	write32((uart_base + UART_THR_DLAB), (UART_RATE_115200 & 0xff));
+	write32((uart_base + UART_IER_DLAB), 0);
+	write32((uart_base + UART_LCR), LCR_DLAB | 0x3);
+	write32((uart_base + UART_MCR), 0);
+	write32((uart_base + UART_THR_DLAB), UART_RATE_115200);
 	write32((uart_base + UART_IER_DLAB), (UART_RATE_115200 >> 8));
 	/* 8-bit and no parity */
 	write32((uart_base + UART_LCR), LCR_WD_SIZE_8);
 	/* enable and clear RX/TX FIFO */
 	write32((uart_base + UART_IIR_FCR),
-		(FCR_TX_CLR + FCR_RX_CLR + FCR_EN_FIFO));
+		(FCR_EN_FIFO | FCR_RX_CLR | FCR_TX_CLR));
+}
+
+static void uart_send(const void *buf, int len) {
+	uint32_t *uart_base;
+
+	uart_base = uart_base_regs[1];
+
+    for (int i = 0; i < len; i++) {
+		while (read32((uart_base + UART_LSR)) & (1<<8)) {
+            /* Wait until the TX FIFO isn't full */
+        }
+		write32((uart_base + UART_THR_DLAB), *((const uint8_t *)buf + i));
+    }
 }
 
 /* Accessors. */
