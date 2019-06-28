@@ -91,7 +91,7 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 		die("ERROR: Cannot locate sc7entry firmware");
 			
 	cbfs_file_data(&fh, &sc7entry_fw);
-	t210_plat_params.sc7entry_fw_size = ((region_device_sz(&fh) + ((4 * KiB) / 2)) / (4 * KiB)) * (4 * KiB); // 4KB aligned
+	t210_plat_params.sc7entry_fw_size = (region_device_sz(&fh) + 4 * KiB - 1) & ~(4 * KiB - 1); // 4KB aligned
 	memset((void *)(uintptr_t)t210_plat_params.sc7entry_fw_base, 0, t210_plat_params.sc7entry_fw_size);
 	rdev_readat(&fh, (void *)(uintptr_t)(tz_base_mib * MiB), 0, region_device_sz(&fh));
 	
@@ -99,7 +99,7 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 		die("ERROR: Cannot locate warmboot firmware");
 
 	cbfs_file_data(&fh, &warmboot_fw);
-	t210_plat_params.warmboot_fw_size = ((region_device_sz(&fh) + ((4 * KiB) / 2)) / (4 * KiB)) * (4 * KiB); // 4KB aligned
+	t210_plat_params.warmboot_fw_size = (region_device_sz(&fh) + 4 * KiB -1) & ~(4 * KiB -1); // 4KB aligned
 	memset((void *)(uintptr_t)t210_plat_params.warmboot_fw_base, 0, t210_plat_params.warmboot_fw_size);
 	rdev_readat(&fh, (void *)(uintptr_t)t210_plat_params.warmboot_fw_base, 0, region_device_sz(&fh));
 
