@@ -42,6 +42,8 @@ tegra_lp0_resume.fw: tegra_lp0_resume.elf
 	$(RM) -f $@.nosig $@.sig $@.tosig
 	@# Convert the ELF image into a binary image.
 	$(OBJCOPY) -O binary $< $@.nosig
+# Switch: No need to sign this due to the warmboot exploit
+ifeq (0,1)
 	@# Extract the part of the binary which needs to be signed.
 	$(DD) bs=1 skip=544 if=$@.nosig of=$@.tosig
 	@# Calculate a signature for that part.
@@ -50,6 +52,7 @@ tegra_lp0_resume.fw: tegra_lp0_resume.elf
 		$@.tosig > $@.sig
 	@# Inject the signature into the binary image's header.
 	$(DD) conv=notrunc bs=1 seek=272 count=16 if=$@.sig of=$@.nosig
+endif
 	@# Copy the signed binary to the target file name.
 	$(MV) $@.nosig $@
 
