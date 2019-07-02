@@ -94,7 +94,8 @@ ramstage-y += ramstage.c
 ramstage-y += mmu_operations.c
 ramstage-$(CONFIG_DRIVERS_UART) += uart.c
 ramstage-y += ../tegra/usb.c
-ramstage-$(CONFIG_HAVE_MTC) += mtc.c
+ramstage-y += mtc.c
+ramstage-y += mtc/mtc.c
 ramstage-y += stage_entry.S
 
 rmodules_arm-y += monotonic_timer.c
@@ -167,27 +168,4 @@ SC7ENTRY_FILE = $(SC7ENTRY_DIR)/$(CONFIG_SC7ENTRY_FILE)
 cbfs-files-y += $(CONFIG_SC7ENTRY_FILE)
 $(CONFIG_SC7ENTRY_FILE)-file := $(SC7ENTRY_FILE)
 $(CONFIG_SC7ENTRY_FILE)-type := raw
-
-# MTC fw
-MTC_DIR = $(CONFIG_MTC_DIRECTORY)
-MTC_FILE = $(MTC_DIR)/$(CONFIG_MTC_FILE)
-MTC_FILE_CBFS = $(CONFIG_MTC_FILE)
-cbfs-files-$(CONFIG_HAVE_MTC) += $(MTC_FILE_CBFS)
-$(MTC_FILE_CBFS)-file := $(MTC_FILE)
-$(MTC_FILE_CBFS)-type := raw
-
-ifeq ($(CONFIG_HAVE_MTC_TABLES),y)
-    MTC_TABLES_DIRECTORY = $(call strip_quotes,$(CONFIG_MTC_TABLES_DIRECTORY))
-
-    define MTC_CBFS_template =
-        cbfs-files-y += $(1)
-        $(1)-file := $(MTC_TABLES_DIRECTORY)/$(1)
-        $(1)-type := raw
-    endef
-
-    MTC_TABLE_NAMES = $(notdir $(wildcard $(MTC_TABLES_DIRECTORY)/tegra_mtc_table_*.bin))
-
-    $(foreach table,$(MTC_TABLE_NAMES),$(eval $(call MTC_CBFS_template,$(table))))
-endif
-
 endif

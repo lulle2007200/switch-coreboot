@@ -18,8 +18,6 @@
 
 #include <boot/coreboot_tables.h>
 
-#if IS_ENABLED(CONFIG_HAVE_MTC)
-
 typedef struct {
         unsigned int        rev;
         char                dvfs_ver[60];
@@ -105,12 +103,6 @@ typedef struct {
 
 int tegra210_run_mtc(void);
 void soc_add_mtc(struct lb_header *header);
-
-#else
-
-static inline int tegra210_run_mtc(void) { return 0; }
-static inline void soc_add_mtc(struct lb_header *header) {}
-
-#endif /* CONFIG_HAVE_MTC */
+size_t get_mtc_size(void);
 
 #endif /* __SOC_NVIDIA_TEGRA210_MTC_H__ */

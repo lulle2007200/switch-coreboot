@@ -21,6 +21,7 @@
 #include <arch/io.h>
 #include <soc/addressmap.h>
 #include <soc/console_uart.h>
+#include <soc/mtc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <symbols.h>
@@ -63,6 +64,10 @@ typedef struct bl31_plat_params {
 	uint64_t warmboot_fw_size;
 	/* System Suspend Wakeup Firmware base address */
 	uint64_t warmboot_fw_base;
+	/* EMC Table size */
+	uint64_t emc_table_size;
+	/* EMC Table base address */
+	uint64_t emc_table_base;
 } bl31_plat_params_t;
 
 static bl31_plat_params_t t210_plat_params;
@@ -125,6 +130,9 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 	/* Switch: Apply N's warmboot RSA modulus */
 	memcpy((void *)(uintptr_t)(t210_plat_params.warmboot_fw_base + 0x10), retail_pkc_modulus, 0x100);
 
+	t210_plat_params.emc_table_size = get_mtc_size();
+	t210_plat_params.emc_table_base = (uint64_t)(uintptr_t)cbmem_find(CBMEM_ID_MTC);
+	
 	dcache_clean_by_mva(&t210_plat_params, sizeof(t210_plat_params));
 	return &t210_plat_params;
 }
