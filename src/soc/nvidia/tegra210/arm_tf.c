@@ -68,6 +68,10 @@ typedef struct bl31_plat_params {
 	uint64_t emc_table_size;
 	/* EMC Table base address */
 	uint64_t emc_table_base;
+	/* Rebootstub size */
+	uint64_t rebootstub_size;
+	/* Rebootstub base address */
+	uint64_t rebootstub_base;
 } bl31_plat_params_t;
 
 static bl31_plat_params_t t210_plat_params;
@@ -77,7 +81,7 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 	uintptr_t tz_base_mib;
 	size_t tz_size_mib;
 	int uart_id = 0;
-	struct cbfsf sc7entry_fw, warmboot_fw;
+	struct cbfsf sc7entry_fw, warmboot_fw, rebootstub;
 	struct region_device fh;
 
 	carveout_range(CARVEOUT_TZ, &tz_base_mib, &tz_size_mib);
@@ -109,7 +113,7 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 	t210_plat_params.uart_id = uart_id;
 	t210_plat_params.sc7entry_fw_base = (tz_base_mib * MiB);
 	t210_plat_params.warmboot_fw_base = (tz_base_mib * MiB) + (MiB / 2); // warmboot fw is 512kb before tzdram base
-
+	t210_plat_params.rebootstub_base = (tz_base_mib * MiB) + (MiB - 0x2000); // rebootstub is probably < 1 page anyway
 
 	if (cbfs_boot_locate(&sc7entry_fw, CONFIG_SC7ENTRY_FILE, NULL))
 		die("ERROR: Cannot locate sc7entry firmware");
@@ -126,6 +130,14 @@ void *soc_get_bl31_plat_params(bl31_params_t *params)
 	t210_plat_params.warmboot_fw_size = (region_device_sz(&fh) + 4 * KiB -1) & ~(4 * KiB -1); // 4KB aligned
 	memset((void *)(uintptr_t)t210_plat_params.warmboot_fw_base, 0, t210_plat_params.warmboot_fw_size);
 	rdev_readat(&fh, (void *)(uintptr_t)t210_plat_params.warmboot_fw_base, 0, region_device_sz(&fh));
+
+	if (cbfs_boot_locate(&rebootstub, CONFIG_REBOOTSTUB_FILE, NULL))
+		die("ERROR: Cannot locate rebootstub");
+
+	cbfs_file_data(&fh, &rebootstub);
+	t210_plat_params.rebootstub_size = (region_device_sz(&fh) + 4 * KiB -1) & ~(4 * KiB -1); // 4KB aligned
+	memset((void *)(uintptr_t)t210_plat_params.rebootstub_base, 0, t210_plat_params.rebootstub_size);
+	rdev_readat(&fh, (void *)(uintptr_t)t210_plat_params.rebootstub_base, 0, region_device_sz(&fh));
 
 	/* Switch: Apply N's warmboot RSA modulus */
 	memcpy((void *)(uintptr_t)(t210_plat_params.warmboot_fw_base + 0x10), retail_pkc_modulus, 0x100);
