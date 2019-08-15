@@ -26,10 +26,6 @@
 #include <stdlib.h>
 #include <soc/nvidia/tegra/apbmisc.h>
 
-#define SDRAM_ENABLED_MAGIC 0x4452414D
-
-static const u32 *SDRAM_EN_ADDR = (u32 *)0x4003e000;
-
 static void sdram_patch(uintptr_t addr, uint32_t value)
 {
 	if (addr)
@@ -1080,9 +1076,4 @@ void sdram_init(const struct sdram_params *param)
 	sdram_set_refresh(param, emc);
 	sdram_enable_arbiter(param);
 	sdram_lock_carveouts(param, mc);
-}
-
-uint32_t sdram_init_done(void)
-{
-	return (*SDRAM_EN_ADDR == SDRAM_ENABLED_MAGIC);
 }

@@ -73,10 +73,10 @@
 	Range = bound;						\
 	*(p) += (kBitModelTotal - *(p)) >> kNumMoveBits
 
-#define UpdateBit1(p)				\
+#define UpdateBit1(p){				\
 	Range -= bound;				\
 	Code -= bound;				\
-	*(p) -= (*(p)) >> kNumMoveBits
+	*(p) -= (*(p)) >> kNumMoveBits;}
 
 #define RC_GET_BIT2(p, mi, A0, A1)			\
 	IfBit0(p) {					\
