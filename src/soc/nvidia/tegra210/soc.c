@@ -88,9 +88,16 @@ static void tegra210_init(void *chip_info)
 	printk(BIOS_INFO, "chip %x rev %02x.%x\n",
 		rev.chip_id, rev.major, rev.minor);
 
-	/* Save sdram parameters to scratch regs to be used in LP0 resume */
-	sdram_lp0_save_params(get_sdram_config());
-	printk(BIOS_INFO, "sdram params saved.\n");
+	if (!sdram_init_done())
+	{
+		/* Save sdram parameters to scratch regs to be used in LP0 resume */
+		sdram_lp0_save_params(get_sdram_config());
+		printk(BIOS_INFO, "sdram params saved.\n");
+	}
+	else
+	{
+		printk(BIOS_INFO, "sdram params already saved.\n");
+	}
 }
 
 struct chip_operations soc_nvidia_tegra210_ops = {

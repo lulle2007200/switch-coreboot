@@ -19,6 +19,7 @@
 #include <soc/sdram_param.h>
 
 uint32_t sdram_get_ram_code(void);
+uint32_t sdram_init_done(void);
 void sdram_init(const struct sdram_params *param);
 
 /* Save params to PMC scratch registers for use by BootROM on LP0 resume. */

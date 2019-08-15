@@ -49,8 +49,18 @@ void romstage(void)
 	printk(BIOS_INFO, "T210 romstage: SDRAM init done by BootROM, RAMCODE = %d\n",
 		sdram_get_ram_code());
 #else
-	sdram_init(get_sdram_config());
-	printk(BIOS_INFO, "T210 romstage: sdram_init done\n");
+	if (!sdram_init_done())
+	{
+		sdram_init(get_sdram_config());
+		printk(BIOS_INFO, "T210 romstage: sdram_init done\n");
+	}
+	else
+	{
+		printk(BIOS_INFO, "T210 romstage: SDRAM init already done, RAMCODE = %d\n",
+			sdram_get_ram_code());
+	}
+		
+	
 #endif
 
 	/*
