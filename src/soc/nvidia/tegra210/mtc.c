@@ -31,10 +31,8 @@
 #define MTC_TABLE_ENTRY_SIZE	4880
 #define MTC_TABLE_MAX_SIZE	(MAX_MTC_TABLE_ENTRIES * MTC_TABLE_ENTRY_SIZE)
 
-#define TRAIN_FUNC 0x5100
-
 #define OP_SWITCH 0
-#define OP_TRAIN 1
+#define OP_TRAIN  1
 
 int tegra210_run_mtc(void)
 {
@@ -86,31 +84,50 @@ int tegra210_run_mtc(void)
 	}
 
 	printk(BIOS_INFO, "MTC: running training\n");
+	mtc_cfg.rate_from = mtc_cfg.mtc_table[boot_index].rate_khz;
+	mtc_cfg.train_mode = OP_TRAIN;
 
 	for (int i = 0; i < mtc_cfg.table_entries; i++) {
-		if (i == boot_index) continue;
-		printk(BIOS_INFO, "MTC: Training %d kHz -> %d kHz\n",
-			   mtc_cfg.mtc_table[boot_index].rate_khz, mtc_cfg.mtc_table[i].rate_khz);
-
 		mtc_cfg.rate_to = mtc_cfg.mtc_table[i].rate_khz;
-		mtc_cfg.rate_from = mtc_cfg.mtc_table[boot_index].rate_khz;
-		mtc_cfg.train_mode = OP_TRAIN;
+		printk(BIOS_INFO, "MTC: training %d kHz -> %d kHz\n",
+			mtc_cfg.rate_from, mtc_cfg.rate_to);
 
 		minerva_main(&mtc_cfg);
 	}
 
-	printk(BIOS_INFO, "MTC: increasing memory clocks\n");
+	printk(BIOS_INFO, "MTC: increasing memory clock\n");
+	mtc_cfg.train_mode = OP_SWITCH;
 
-	for (int i = boot_index + 1; i < mtc_cfg.table_entries; i++) {
-		if (mtc_cfg.mtc_table[i].periodic_training)
+	int target_index = 0;
+	for (target_index = boot_index + 1; target_index < mtc_cfg.table_entries; target_index++) {
+		if (mtc_cfg.mtc_table[target_index].periodic_training) {
+		    target_index--;
 			break;
+		}
+	}
+	
+	if (target_index >= mtc_cfg.table_entries)
+	    target_index = mtc_cfg.table_entries - 1;
+	
+	if (!mtc_cfg.fsp_for_src_freq) {
+		printk(BIOS_INFO, "MTC: activating FSP WAR\n");
 
-		printk(BIOS_INFO, "MTC: Switching %d kHz -> %d kHz\n",
-			   mtc_cfg.mtc_table[i - 1].rate_khz, mtc_cfg.mtc_table[i].rate_khz);
+		target_index--;
+		mtc_cfg.rate_to = mtc_cfg.mtc_table[target_index].rate_khz;
+		printk(BIOS_INFO, "MTC: switching %d kHz -> %d kHz\n",
+			mtc_cfg.rate_from, mtc_cfg.rate_to);
+		minerva_main(&mtc_cfg);
 
-		mtc_cfg.rate_to = mtc_cfg.mtc_table[i].rate_khz;
-		mtc_cfg.rate_from = mtc_cfg.mtc_table[i - 1].rate_khz;
-		mtc_cfg.train_mode = OP_SWITCH;
+		target_index++;
+		mtc_cfg.rate_to = mtc_cfg.mtc_table[target_index].rate_khz;
+		printk(BIOS_INFO, "MTC: switching %d kHz -> %d kHz\n",
+			mtc_cfg.rate_from, mtc_cfg.rate_to);
+		minerva_main(&mtc_cfg);
+	}
+	else {
+		mtc_cfg.rate_to = mtc_cfg.mtc_table[target_index].rate_khz;
+		printk(BIOS_INFO, "MTC: switching %d kHz -> %d kHz\n",
+			mtc_cfg.rate_from, mtc_cfg.rate_to);
 
 		minerva_main(&mtc_cfg);
 	}
