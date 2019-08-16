@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
  * Copyright 2014 Google Inc.
+ * Copyright (C) 2018 naehrwert
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -49,6 +50,19 @@ void sdram_lp0_save_params(const struct sdram_params *sdram)
 
 /* 32 bits version c macro */
 #define c32(value, pmcreg) pmc->pmcreg = value
+
+	// Patch SDRAM parameters.
+	u32 t0 = sdram->EmcSwizzleRank0Byte0 << 5 >> 29 > sdram->EmcSwizzleRank0Byte0 << 1 >> 29;
+	u32 t1 = (t0 & 0xFFFFFFEF) | ((sdram->EmcSwizzleRank1Byte0 << 5 >> 29 > sdram->EmcSwizzleRank1Byte0 << 1 >> 29) << 4);
+	u32 t2 = (t1 & 0xFFFFFFFD) | ((sdram->EmcSwizzleRank0Byte1 << 5 >> 29 > sdram->EmcSwizzleRank0Byte1 << 1 >> 29) << 1);
+	u32 t3 = (t2 & 0xFFFFFFDF) | ((sdram->EmcSwizzleRank1Byte1 << 5 >> 29 > sdram->EmcSwizzleRank1Byte1 << 1 >> 29) << 5);
+	u32 t4 = (t3 & 0xFFFFFFFB) | ((sdram->EmcSwizzleRank0Byte2 << 5 >> 29 > sdram->EmcSwizzleRank0Byte2 << 1 >> 29) << 2);
+	u32 t5 = (t4 & 0xFFFFFFBF) | ((sdram->EmcSwizzleRank1Byte2 << 5 >> 29 > sdram->EmcSwizzleRank1Byte2 << 1 >> 29) << 6);
+	u32 t6 = (t5 & 0xFFFFFFF7) | ((sdram->EmcSwizzleRank0Byte3 << 5 >> 29 > sdram->EmcSwizzleRank0Byte3 << 1 >> 29) << 3);
+	u32 t7 = (t6 & 0xFFFFFF7F) | ((sdram->EmcSwizzleRank1Byte3 << 5 >> 29 > sdram->EmcSwizzleRank1Byte3 << 1 >> 29) << 7);
+	sdram->SwizzleRankByteEncode = t7;
+	sdram->EmcBctSpare2 = 0x40000DD8;
+	sdram->EmcBctSpare3 = t7;
 
 	s(EmcClockSource, 7:0, scratch6, 15:8);
 	s(EmcClockSourceDll, 7:0, scratch6, 23:16);
@@ -720,7 +734,7 @@ void sdram_lp0_save_params(const struct sdram_params *sdram)
 	s32(EmcBctSpare6, scratch40);
 	s32(EmcBctSpare5, scratch42);
 	s32(EmcBctSpare4, scratch44);
-	s32(SwizzleRankByteEncode, scratch45);
+	s32(EmcBctSpare3, scratch45);
 	s32(EmcBctSpare2, scratch46);
 	s32(EmcBctSpare1, scratch47);
 	s32(EmcBctSpare0, scratch48);
@@ -1014,9 +1028,9 @@ void sdram_lp0_save_params(const struct sdram_params *sdram)
 	s32(McGeneralizedCarveout5ForceInternalAccess3, secure_scratch107);
 
 	/* Locking PMC secure scratch register (8 ~ 15) for writing */
-	c(0x5555, sec_disable2, 15:0);
+	// c(0x5555, sec_disable2, 15:0);
 	/* Locking PMC secure scratch register (4~ 7) for both reading and writing */
-	c(0xff, sec_disable, 19:12);
+	// c(0xff, sec_disable, 19:12);
 
 	c32(0, scratch2);
 	s(PllMInputDivider, 7:0, scratch2, 7:0);
