@@ -25,7 +25,7 @@
  * writes them into PMC scratch registers (where the BootROM expects them
  * on LP0 resume).
  */
-void sdram_lp0_save_params(const struct sdram_params *sdram)
+void sdram_lp0_save_params(struct sdram_params *sdram)
 {
 	struct tegra_pmc_regs * pmc = (void *)TEGRA_PMC_BASE;
 

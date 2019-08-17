@@ -25,7 +25,7 @@ static const u32 *SDRAM_EN_ADDR = (u32 *)0x4003e000;
 
 uint32_t sdram_init_done(void)
 {
-	return (*SDRAM_EN_ADDR == SDRAM_ENABLED_MAGIC);
+	return 0 * !!(*SDRAM_EN_ADDR == SDRAM_ENABLED_MAGIC); //FIXME
 }
 
 uint32_t sdram_get_ram_code(void)
