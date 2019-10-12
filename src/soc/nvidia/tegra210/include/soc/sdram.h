@@ -23,6 +23,7 @@ uint32_t sdram_init_done(void);
 void sdram_init(const struct sdram_params *param);
 
 /* Save params to PMC scratch registers for use by BootROM on LP0 resume. */
+void update_bct_carveout_values(struct sdram_params *sdram);
 void sdram_lp0_save_params(struct sdram_params *sdram);
 
 #endif /* __SOC_NVIDIA_TEGRA210_SDRAM_H__ */

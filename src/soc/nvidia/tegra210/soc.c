@@ -89,6 +89,7 @@ static void tegra210_init(void *chip_info)
 		rev.chip_id, rev.major, rev.minor);
 
 	/* Save sdram parameters to scratch regs to be used in LP0 resume */
+	update_bct_carveout_values((struct sdram_params*)get_sdram_config());
 	sdram_lp0_save_params((struct sdram_params*)get_sdram_config());
 	printk(BIOS_INFO, "sdram params saved.\n");
 }
