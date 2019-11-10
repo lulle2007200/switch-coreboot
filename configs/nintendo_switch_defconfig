@@ -9,4 +9,4 @@ CONFIG_PAYLOAD_ELF=y
 CONFIG_PAYLOAD_FILE="../switch-uboot/u-boot.elf"
 CONFIG_SC7ENTRY_FILE="../Atmosphere/exosphere/sc7fw/sc7fw.bin"
 CONFIG_WARMBOOT_FILE="src/soc/nvidia/tegra210/lp0/sc7_exit/tegra_sc7_exit.fw"
-CONFIG_REBOOTSTUB_FILE="../Atmosphere/exosphere/rebootstub/rebootstub.bin"
+CONFIG_REBOOTSTUB_FILE="src/soc/nvidia/tegra210/lp0/rebootstub/tegra_rebootstub.fw"
