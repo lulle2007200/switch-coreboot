@@ -1,0 +1,49 @@
+ifeq ($(strip $(DEVKITARM)),)
+$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
+endif
+
+include $(DEVKITARM)/base_rules
+
+################################################################################
+
+TARGET := sc7_entry
+BUILDDIR := ./build
+OUTPUTDIR := ./output
+
+# Main and graphics.
+OBJS = $(addprefix $(BUILDDIR)/, \
+	start.o sc7_entry.o i2c.o \
+)
+
+################################################################################
+
+ARCH := -march=armv4t -mtune=arm7tdmi
+CFLAGS = $(ARCH) -Os -fpie -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall
+LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
+
+################################################################################
+
+.PHONY: all clean
+
+all: $(TARGET).bin
+	@echo -n "sc7_entry is "
+	@wc -c < $(OUTPUTDIR)/$(TARGET).bin
+
+clean:
+	@rm -rf $(OBJS)
+	@rm -rf $(BUILDDIR)
+	@rm -rf $(OUTPUTDIR)
+
+$(TARGET).bin: $(BUILDDIR)/$(TARGET).elf
+	$(OBJCOPY) -O binary $< $(OUTPUTDIR)/$@
+
+$(BUILDDIR)/$(TARGET).elf: $(OBJS)
+	@$(CC) $(LDFLAGS) -T link.ld $^ -o $@
+
+$(BUILDDIR)/%.o: %.c
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILDDIR)/%.o: %.S
+	@mkdir -p "$(BUILDDIR)"
+	@mkdir -p "$(OUTPUTDIR)"
+	@$(CC) $(CFLAGS) -c $< -o $@
