@@ -158,10 +158,17 @@ BL31_MAKEARGS += PLAT=tegra TARGET_SOC=t210
 # Warmboot fw
 ifneq ($(CONFIG_WARMBOOT_FILE),"")
 
-WARMBOOT_FILE = ./$(CONFIG_WARMBOOT_FILE)
-cbfs-files-y += $(CONFIG_WARMBOOT_FILE)
-$(CONFIG_WARMBOOT_FILE)-file := $(WARMBOOT_FILE)
-$(CONFIG_WARMBOOT_FILE)-type := raw
+SC7EXIT_DIR := $(dir $(CONFIG_WARMBOOT_FILE))"
+SC7EXIT := $(call strip_quotes,$(CONFIG_WARMBOOT_FILE))
+$(SC7EXIT): $(obj)/build.h
+	$(MAKE) -C $(SC7EXIT_DIR)
+
+.PHONY: $(CONFIG_WARMBOOT_FILE)
+
+SC7EXIT_FILE = ./$(SC7EXIT)
+$(SC7EXIT)-file := $(SC7EXIT_FILE)
+$(SC7EXIT)-type := raw
+cbfs-files-y += $(SC7EXIT)
 
 endif # CONFIG_WARMBOOT_FILE
 
