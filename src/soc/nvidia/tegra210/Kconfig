@@ -116,38 +116,20 @@ config PLLX_KHZ
 
 config SC7ENTRY_FILE
 	string "tegra sc7entry firmware filename"
-	default "sc7entry.bin"
+	default ""
 	help
 	  The filename of the sc7entry firmware
 
-config SC7ENTRY_DIRECTORY
-	string "Directory where sc7entry firmware file is located"
-	default "."
-	help
-	  Path to directory where sc7entry firmware file is located.
-
 config WARMBOOT_FILE
 	string "tegra warmboot firmware filename"
-	default "warmboot.bin"
+	default ""
 	help
 	  The filename of the warmboot firmware
-
-config WARMBOOT_DIRECTORY
-	string "Directory where warmboot firmware file is located"
-	default "."
-	help
-	  Path to directory where warmboot firmware file is located.
 
 config REBOOTSTUB_FILE
 	string "tegra warmboot firmware filename"
-	default "rebootstub.bin"
+	default ""
 	help
 	  The filename of the warmboot firmware
-
-config REBOOTSTUB_DIRECTORY
-	string "Directory where warmboot firmware file is located"
-	default "."
-	help
-	  Path to directory where warmboot firmware file is located.
 
 endif # SOC_NVIDIA_TEGRA210
