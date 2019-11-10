@@ -13,7 +13,7 @@
 ##
 ################################################################################
 
--include ../../../../../.xcompile
+-include ../../../../../../.xcompile
 GCC_PREFIX?=$(CROSS_COMPILE_arm)
 
 CC = $(GCC_PREFIX)gcc
@@ -29,15 +29,15 @@ RM = rm
 SIGKEY = 00000000000000000000000000000000
 
 .PHONY: all
-all: tegra_lp0_resume.fw
+all: tegra_sc7_exit.fw
 
-tegra_lp0_resume.elf: tegra_lp0_resume.ld tegra_lp0_resume.c
+tegra_sc7_exit.elf: tegra_sc7_exit.ld tegra_sc7_exit.c
 	$(CC) -marm -march=armv4t -mno-unaligned-access -nostdlib -static \
-		-Os -fpie -Wl,--build-id=none -ggdb3 -T tegra_lp0_resume.ld \
-		-I ../../../../include -I ../../../../arch/arm/include \
+		-Os -fpie -Wl,--build-id=none -ggdb3 -T tegra_sc7_exit.ld \
+		-I ../../../../../include -I ../../../../../arch/arm/include \
 		-o $@ $(filter %.c,$+)
 
-tegra_lp0_resume.fw: tegra_lp0_resume.elf
+tegra_sc7_exit.fw: tegra_sc7_exit.elf
 	@# Get rid of any files we're about to create.
 	$(RM) -f $@.nosig $@.sig $@.tosig
 	@# Convert the ELF image into a binary image.
@@ -57,5 +57,5 @@ endif
 	$(MV) $@.nosig $@
 
 clean:
-	$(RM) -f tegra_lp0_resume.fw tegra_lp0_resume.fw.sig
-	$(RM) -f tegra_lp0_resume.fw.tosig tegra_lp0_resume.elf
+	$(RM) -f tegra_sc7_exit.fw tegra_sc7_exit.fw.sig
+	$(RM) -f tegra_sc7_exit.fw.tosig tegra_sc7_exit.elf
