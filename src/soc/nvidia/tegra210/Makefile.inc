@@ -217,6 +217,4 @@ ifneq ($(CONFIG_REBOOTSTUB_FILE),"")
 	rm -f $(CONFIG_REBOOTSTUB_FILE)
 endif
 
-.PHONY: fw_cleanup
-
 endif
