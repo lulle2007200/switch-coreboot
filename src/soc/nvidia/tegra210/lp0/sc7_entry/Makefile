@@ -41,6 +41,8 @@ tegra_sc7_entry.fw: tegra_sc7_entry.elf
 	$(RM) -f $@.fw
 	@# Convert the ELF image into a binary image.
 	$(OBJCOPY) -S -O binary $< $@
+	$(MV) tegra_sc7_entry.elf tegra_sc7_entry.elf.old
+	$(CP) tegra_sc7_entry.fw tegra_sc7_entry.fw.old
 
 clean:
 	$(RM) -f tegra_sc7_entry.fw tegra_sc7_entry.elf

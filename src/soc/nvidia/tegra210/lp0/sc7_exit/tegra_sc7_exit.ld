@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Google Inc.
+ * Copyright 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,7 @@
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 
-PHDRS
-{
-	to_load PT_LOAD;
-}
-
-ENTRY(lp0_resume)
+ENTRY(_start)
 SECTIONS
 {
 	. = 0x40010000;
@@ -32,7 +27,7 @@ SECTIONS
 	.header_start = .;
 	.header . : {
 		*(.header);
-	} : to_load = 0xff
+	}
 	.header_end = .;
 
 	. = 0x40010240;
@@ -40,6 +35,7 @@ SECTIONS
 	/* The actual lp0 blob code. */
 	.data_start = .;
 	.data . : {
+		*(.text._start);
 		*(.text);
 		*(.text.*);
 		*(.rodata);

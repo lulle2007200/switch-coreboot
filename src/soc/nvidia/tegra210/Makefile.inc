@@ -206,4 +206,17 @@ cbfs-files-y += $(REBOOTSTUB)
 
 endif # CONFIG_REBOOTSTUB_FILE
 
+all:
+ifneq ($(CONFIG_WARMBOOT_FILE),"")
+	rm -f $(CONFIG_WARMBOOT_FILE)
+endif
+ifneq ($(CONFIG_SC7ENTRY_FILE),"")
+	rm -f $(CONFIG_SC7ENTRY_FILE)
+endif
+ifneq ($(CONFIG_REBOOTSTUB_FILE),"")
+	rm -f $(CONFIG_REBOOTSTUB_FILE)
+endif
+
+.PHONY: fw_cleanup
+
 endif

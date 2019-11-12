@@ -41,6 +41,8 @@ tegra_rebootstub.fw: tegra_rebootstub.elf
 	$(RM) -f $@.fw
 	@# Convert the ELF image into a binary image.
 	$(OBJCOPY) -S -O binary $< $@
+	$(MV) tegra_rebootstub.elf tegra_rebootstub.elf.old
+	$(CP) tegra_rebootstub.fw tegra_rebootstub.fw.old
 
 clean:
 	$(RM) -f tegra_rebootstub.fw tegra_rebootstub.elf
