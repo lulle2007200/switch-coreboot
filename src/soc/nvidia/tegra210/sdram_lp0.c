@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
  * Copyright 2014 Google Inc.
- * Copyright (C) 2018 naehrwert
+ * Copyright 2018 naehrwert
+ * Copyright 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,8 +24,8 @@
 #include <soc/mc.h>
 
 /*
- * 'Flush' the MC carveout regs that might have changed back to the BCT
- * so that they'll be properly restored on resume. BOM and CFG0 only for now.
+ * 'Flush' the MC carveout regs that might have changed back into BCT
+ * so that they'll be properly restored on resume.
  * Must be called before sdram_lp0_save_params().
  */
 
@@ -34,19 +35,49 @@ void update_bct_carveout_values(struct sdram_params *sdram)
 
 	/* NVDEC */
 	sdram->McGeneralizedCarveout1Bom = read32(&mc->security_carveout1_bom);
+	sdram->McGeneralizedCarveout1BomHi = read32(&mc->security_carveout1_bom_hi);
+	sdram->McGeneralizedCarveout1Size128kb = read32(&mc->security_carveout1_size_128kb);
 	sdram->McGeneralizedCarveout1Cfg0 = read32(&mc->security_carveout1_cfg0);
-	/* GPU/GSC */
+
+	/* GPU */
 	sdram->McGeneralizedCarveout2Bom = read32(&mc->security_carveout2_bom);
+	sdram->McGeneralizedCarveout2BomHi = read32(&mc->security_carveout2_bom_hi);
+	sdram->McGeneralizedCarveout2Size128kb = read32(&mc->security_carveout2_size_128kb);
 	sdram->McGeneralizedCarveout2Cfg0 = read32(&mc->security_carveout2_cfg0);
+
+	/* GSC */
 	sdram->McGeneralizedCarveout3Bom = read32(&mc->security_carveout3_bom);
+	sdram->McGeneralizedCarveout3BomHi = read32(&mc->security_carveout3_bom_hi);
+	sdram->McGeneralizedCarveout3Size128kb = read32(&mc->security_carveout3_size_128kb);
 	sdram->McGeneralizedCarveout3Cfg0 = read32(&mc->security_carveout3_cfg0);
-	/* TSECA/B */
+
+	/* TSECA */
 	sdram->McGeneralizedCarveout4Bom = read32(&mc->security_carveout4_bom);
+	sdram->McGeneralizedCarveout4BomHi = read32(&mc->security_carveout4_bom_hi);
+	sdram->McGeneralizedCarveout4Size128kb = read32(&mc->security_carveout4_size_128kb);
 	sdram->McGeneralizedCarveout4Cfg0 = read32(&mc->security_carveout4_cfg0);
+
+	/* TSECB */
 	sdram->McGeneralizedCarveout5Bom = read32(&mc->security_carveout5_bom);
+	sdram->McGeneralizedCarveout5BomHi = read32(&mc->security_carveout5_bom_hi);
+	sdram->McGeneralizedCarveout5Size128kb = read32(&mc->security_carveout5_size_128kb);
 	sdram->McGeneralizedCarveout5Cfg0 = read32(&mc->security_carveout5_cfg0);
+
+	/* SEC */
+	sdram->McSecCarveoutBom = read32(&mc->sec_carveout_bom);
+	sdram->McSecCarveoutAdrHi = read32(&mc->sec_carveout_adr_hi);
+	sdram->McSecCarveoutSizeMb = read32(&mc->sec_carveout_size_mb);
+	sdram->McSecCarveoutProtectWriteAccess = read32(&mc->sec_carveout_reg_ctrl);
+
+	/* MTS */
+	sdram->McMtsCarveoutBom = read32(&mc->mts_carveout_bom);
+	sdram->McMtsCarveoutAdrHi = read32(&mc->mts_carveout_adr_hi);
+	sdram->McMtsCarveoutSizeMb = read32(&mc->mts_carveout_size_mb);
+	sdram->McMtsCarveoutRegCtrl = read32(&mc->mts_carveout_reg_ctrl);
+
 	/* VPR */
 	sdram->McVideoProtectBom = read32(&mc->video_protect_bom);
+	sdram->McVideoProtectBomAdrHi = read32(&mc->video_protect_bom_adr_hi);
 	sdram->McVideoProtectSizeMb = read32(&mc->video_protect_size_mb);
 	sdram->McVideoProtectWriteAccess = read32(&mc->video_protect_reg_ctrl);
 }

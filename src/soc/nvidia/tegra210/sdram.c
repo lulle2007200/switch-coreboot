@@ -2,6 +2,7 @@
  * This file is part of the coreboot project.
  *
  * Copyright 2014 Google Inc.
+ * Copyright 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,12 +51,11 @@ static void sdram_configure_pmc(const struct sdram_params *param,
 	write32(&regs->vddp_sel, param->PmcVddpSel);
 	udelay(param->PmcVddpSelWait);
 
-	/* Set DDR pad voltage */
-	writebits(param->PmcDdrPwr, &regs->ddr_pwr, PMC_DDR_PWR_VAL_MASK);
+	/* Set DDR pad voltage. (Unused). */
+	write32(&regs->ddr_pwr, regs->ddr_pwr);
 
 	/* Turn on MEM IO Power */
-	writebits(param->PmcNoIoPower, &regs->no_iopower,
-		  (PMC_NO_IOPOWER_MEM_MASK | PMC_NO_IOPOWER_MEM_COMP_MASK));
+	write32(&regs->no_iopower, param->PmcNoIoPower);
 
 	write32(&regs->reg_short, param->PmcRegShort);
 	write32(&regs->ddr_cntrl, param->PmcDdrCntrl);
@@ -107,7 +107,7 @@ static void sdram_start_clocks(const struct sdram_params *param,
 			param->ClkRstControllerPllmMisc2Override);
 
 	/* Wait for enough time for clk switch to take place */
-	udelay(5);
+	udelay(10);
 
 	write32(&clk_rst->clk_enb_w_clr, param->ClearClk2Mc1);
 }
@@ -153,24 +153,23 @@ static void sdram_set_pad_macros(const struct sdram_params *param,
 		param->EmcDbg | (param->EmcDbgWriteMux & WRITE_MUX_ACTIVE));
 
 	rfu_reset = EMC_PMACRO_BRICK_CTRL_RFU1_RESET_VAL;
-	rfu_mask1 = 0x01120112;
-	rfu_mask2 = 0x01BF01BF;
+	rfu_mask1 = 0x1120112;
+	rfu_mask2 = 0x1BF01BF;
 
-	rfu_step1 = rfu_reset & (param->EmcPmacroBrickCtrlRfu1 | ~rfu_mask1);
-	rfu_step2 = rfu_reset & (param->EmcPmacroBrickCtrlRfu1 | ~rfu_mask2);
+	rfu_step1 = (param->EmcPmacroBrickCtrlRfu1 & rfu_mask1) | (rfu_reset & ~rfu_mask1);
+	rfu_step2 = (param->EmcPmacroBrickCtrlRfu1 & rfu_mask2) | (rfu_reset & ~rfu_mask2);
 
 	/* common pad macro (cpm) */
-	cpm_reset_settings = 0x0000000F;
-	cpm_mask1 = 0x00000001;
-	cpm_step1 = cpm_reset_settings;
-	cpm_step1 &= (param->EmcPmacroCommonPadTxCtrl | ~cpm_mask1);
+	cpm_reset_settings = 0xF;
+	cpm_mask1 = 0x1;
+	cpm_step1 = (param->EmcPmacroCommonPadTxCtrl & cpm_mask1) | (cpm_reset_settings & ~cpm_mask1);
 
 	/* Patch 2 using BCT spare variables */
 	sdram_patch(param->EmcBctSpare2, param->EmcBctSpare3);
 
 	/*
 	 * Program CMD mapping. Required before brick mapping, else
-	 * we can't gaurantee CK will be differential at all times.
+	 * we can't guarantee CK will be differential at all times.
 	 */
 	write32(&regs->fbio_cfg7, param->EmcFbioCfg7);
 
@@ -245,7 +244,6 @@ static void sdram_set_pad_macros(const struct sdram_params *param,
 	write32(&regs->pmacro_brick_ctrl_rfu1, rfu_step2);
 	write32(&regs->pmacro_pad_cfg_ctrl, param->EmcPmacroPadCfgCtrl);
 
-	write32(&regs->pmacro_pad_cfg_ctrl, param->EmcPmacroPadCfgCtrl);
 	write32(&regs->pmacro_cmd_brick_ctrl_fdpd,
 		param->EmcPmacroCmdBrickCtrlFdpd);
 	write32(&regs->pmacro_brick_ctrl_rfu2,
@@ -554,7 +552,7 @@ static void sdram_init_mc(const struct sdram_params *param,
 	write32(&regs->video_protect_gpu_override_1,
 		param->McVideoProtectGpuOverride1);
 
-	/* Program SDRAM geometry paarameters */
+	/* Program SDRAM geometry parameters */
 	write32(&regs->emem_adr_cfg, param->McEmemAdrCfg);
 	write32(&regs->emem_adr_cfg_dev0, param->McEmemAdrCfgDev0);
 	write32(&regs->emem_adr_cfg_dev1, param->McEmemAdrCfgDev1);
@@ -566,7 +564,7 @@ static void sdram_init_mc(const struct sdram_params *param,
 	write32(&regs->emem_adr_cfg_bank_mask_1, param->McEmemAdrCfgBankMask1);
 	write32(&regs->emem_adr_cfg_bank_mask_2, param->McEmemAdrCfgBankMask2);
 
-	/* Program external memory aperature (base and size) */
+	/* Program external memory aperture (base and size) */
 	write32(&regs->emem_cfg, param->McEmemCfg);
 
 	/* Program SEC carveout (base and size) */
@@ -741,14 +739,11 @@ static void sdram_set_emc_timing(const struct sdram_params *param,
 	write32(&regs->acpd_control, param->EmcAcpdControl);
 	write32(&regs->txdsrvttgen, param->EmcTxdsrvttgen);
 
-	/*
-	 * Set pipe bypass enable bits before sending any DRAM commands.
-	 * Note other bits in EMC_CFG must be set AFTER REFCTRL is configured.
-	 */
-	writebits(param->EmcCfg, &regs->cfg,
-		  (EMC_CFG_EMC2PMACRO_CFG_BYPASS_ADDRPIPE_MASK |
+	/* Set pipe bypass enable bits before sending any DRAM commands. */
+	write32(&regs->cfg,
+		(param->EmcCfg & (EMC_CFG_EMC2PMACRO_CFG_BYPASS_ADDRPIPE_MASK |
 		   EMC_CFG_EMC2PMACRO_CFG_BYPASS_DATAPIPE1_MASK |
-		   EMC_CFG_EMC2PMACRO_CFG_BYPASS_DATAPIPE2_MASK));
+		   EMC_CFG_EMC2PMACRO_CFG_BYPASS_DATAPIPE2_MASK)) | 0x3C00000);
 }
 
 static void sdram_patch_bootrom(const struct sdram_params *param,
@@ -786,7 +781,7 @@ static void sdram_set_dpd(const struct sdram_params *param,
 
 	/* Enable sel_dpd on unused pins */
 	dpd3_val = (param->EmcPmcScratch1 & 0x3FFFFFFF) | DPD_ON;
-	dpd3_val_sel_dpd = (dpd3_val ^ 0x0000FFFF) & 0xC000FFFF;
+	dpd3_val_sel_dpd = (dpd3_val ^ 0xFFFF) & 0xC000FFFF;
 	write32(&regs->io_dpd3_req, dpd3_val_sel_dpd);
 	udelay(param->PmcIoDpd3ReqWait);
 
@@ -797,7 +792,7 @@ static void sdram_set_dpd(const struct sdram_params *param,
 	udelay(param->PmcIoDpd4ReqWait);
 
 	/* Disable e_dpd_bg */
-	dpd4_val_e_dpd = (dpd4_val ^ 0x0000FFFF) & 0xC000FFFF;
+	dpd4_val_e_dpd = (dpd4_val ^ 0xFFFF) & 0xC000FFFF;
 	write32(&regs->io_dpd4_req, dpd4_val_e_dpd);
 	udelay(param->PmcIoDpd4ReqWait);
 
@@ -812,15 +807,14 @@ static void sdram_set_clock_enable_signal(const struct sdram_params *param,
 	volatile uint32_t dummy = 0;
 	uint32_t val = 0;
 
-	if (param->MemoryType == NvBootMemoryType_LpDdr4) {
+	val = (param->EmcPinGpioEn << EMC_PIN_GPIOEN_SHIFT) |
+	      (param->EmcPinGpio << EMC_PIN_GPIO_SHIFT);
 
-		val = (param->EmcPinGpioEn << EMC_PIN_GPIOEN_SHIFT) |
-		      (param->EmcPinGpio << EMC_PIN_GPIO_SHIFT);
+	if (param->MemoryType == NvBootMemoryType_LpDdr4 ||
+		param->MemoryType == NvBootMemoryType_Ddr3) {
+
 		write32(&regs->pin, val);
 
-		clrbits_le32(&regs->pin,
-			     (EMC_PIN_RESET_MASK | EMC_PIN_DQM_MASK |
-			      EMC_PIN_CKE_MASK));
 		/*
 		 * Assert dummy read of PIN register to ensure above write goes
 		 * through. Wait an additional 200us here as per NVIDIA.
@@ -833,14 +827,17 @@ static void sdram_set_clock_enable_signal(const struct sdram_params *param,
 
 		/*
 		 * Assert dummy read of PIN register to ensure above write goes
-		 * through. Wait an additional 2000us here as per NVIDIA.
+		 * through. Wait an additional 500/2000us here as per NVIDIA.
 		 */
 		dummy |= read32(&regs->pin);
-		udelay(param->EmcPinExtraWait + 2000);
+		if (param->MemoryType == NvBootMemoryType_LpDdr4)
+			udelay(param->EmcPinExtraWait + 2000);
+		else
+			udelay(param->EmcPinExtraWait + 500);
 	}
 
 	/* Enable clock enable signal */
-	setbits_le32(&regs->pin, EMC_PIN_CKE_NORMAL);
+	write32(&regs->pin, val | EMC_PIN_RESET_INACTIVE | EMC_PIN_CKE_NORMAL);
 
 	/* Dummy read of PIN register to ensure final write goes through */
 	dummy |= read32(&regs->pin);
@@ -850,7 +847,6 @@ static void sdram_set_clock_enable_signal(const struct sdram_params *param,
 		die("Failed to program EMC pin.");
 
 	if (param->MemoryType != NvBootMemoryType_LpDdr4) {
-
 		/* Send NOP (trigger just needs to be non-zero) */
 		writebits(((1 << EMC_NOP_CMD_SHIFT) |
 			  (param->EmcDevSelect << EMC_NOP_DEV_SELECTN_SHIFT)),
@@ -915,16 +911,19 @@ static void sdram_init_lpddr4(const struct sdram_params *param,
 	write32(&regs->mrw13, param->EmcMrw13);
 
 	/* Issue ZQCAL start, device 0 */
-	write32(&regs->zq_cal, param->EmcZcalInitDev0);
-	udelay(param->EmcZcalInitWait);
-	/* Issue ZQCAL latch */
-	write32(&regs->zq_cal, (param->EmcZcalInitDev0 ^ 0x3));
-
-	if ((param->EmcDevSelect & 2) == 0) {
-		/* Same for device 1 */
-		write32(&regs->zq_cal, param->EmcZcalInitDev1);
+	if (param->EmcZcalWarmColdBootEnables & 1) {
+		write32(&regs->zq_cal, param->EmcZcalInitDev0);
 		udelay(param->EmcZcalInitWait);
-		write32(&regs->zq_cal, (param->EmcZcalInitDev1 ^ 0x3));
+
+		/* Issue ZQCAL latch */
+		write32(&regs->zq_cal, (param->EmcZcalInitDev0 ^ 0x3));
+
+		if ((param->EmcDevSelect & 2) == 0) {
+			/* Same for device 1 */
+			write32(&regs->zq_cal, param->EmcZcalInitDev1);
+			udelay(param->EmcZcalInitWait);
+			write32(&regs->zq_cal, (param->EmcZcalInitDev1 ^ 0x3));
+		}
 	}
 }
 
@@ -946,10 +945,15 @@ static void sdram_set_zq_calibration(const struct sdram_params *param,
 
 	write32(&regs->pmacro_brick_ctrl_rfu2, param->EmcPmacroBrickCtrlRfu2);
 
-	/* ZQ CAL setup (not actually issuing ZQ CAL now) */
-	if (param->MemoryType == NvBootMemoryType_LpDdr4) {
-		write32(&regs->zcal_wait_cnt, param->EmcZcalWaitCnt);
-		write32(&regs->zcal_mrw_cmd, param->EmcZcalMrwCmd);
+	if (param->EmcZcalWarmColdBootEnables & 1) {
+		/* ZQ CAL setup (not actually issuing ZQ CAL now) */
+		if (param->MemoryType == NvBootMemoryType_Ddr3)
+			write32(&regs->zcal_wait_cnt, param->EmcZcalWaitCnt << 3);
+
+		if (param->MemoryType == NvBootMemoryType_LpDdr4) {
+			write32(&regs->zcal_wait_cnt, param->EmcZcalWaitCnt);
+			write32(&regs->zcal_mrw_cmd, param->EmcZcalMrwCmd);
+		}
 	}
 
 	sdram_trigger_emc_timing_update(regs);
@@ -960,25 +964,19 @@ static void sdram_set_refresh(const struct sdram_params *param,
 			      struct tegra_emc_regs *regs)
 {
 	/* Insert burst refresh */
-	if (param->EmcExtraRefreshNum > 0) {
+	if (param->EmcExtraRefreshNum) {
 		uint32_t refresh_num = (1 << param->EmcExtraRefreshNum) - 1;
 
-		writebits((EMC_REF_CMD_REFRESH | EMC_REF_NORMAL_ENABLED |
-			   (refresh_num << EMC_REF_NUM_SHIFT) |
-			   (param->EmcDevSelect << EMC_REF_DEV_SELECTN_SHIFT)),
-			  &regs->ref, (EMC_REF_CMD_MASK | EMC_REF_NORMAL_MASK |
-				       EMC_REF_NUM_MASK |
-				       EMC_REF_DEV_SELECTN_MASK));
+		write32(&regs->ref,
+			(refresh_num << EMC_REF_NUM_SHIFT) |
+			(param->EmcPinGpio << 30) |
+			EMC_REF_CMD_REFRESH | EMC_REF_NORMAL_ENABLED);
 	}
 
 	/* Enable refresh */
 	write32(&regs->refctrl,
 		(param->EmcDevSelect | EMC_REFCTRL_REF_VALID_ENABLED));
 
-	/*
-	 * NOTE: Programming CFG must happen after REFCTRL to delay
-	 * active power-down to after init (DDR2 constraint).
-	 */
 	write32(&regs->dyn_self_ref_control, param->EmcDynSelfRefControl);
 	write32(&regs->cfg_update, param->EmcCfgUpdate);
 	write32(&regs->cfg, param->EmcCfg);
@@ -1005,8 +1003,9 @@ static void sdram_enable_arbiter(const struct sdram_params *param)
 	/* TODO(hungte) Move values here to standalone header file. */
 	uint32_t *ahb_arbitration_xbar_ctrl = (uint32_t *)(AHB_ARB_XBAR_CTRL);
 
-	setbits_le32(ahb_arbitration_xbar_ctrl,
-		     param->AhbArbitrationXbarCtrlMemInitDone << 16);
+	write32(ahb_arbitration_xbar_ctrl,
+		(*ahb_arbitration_xbar_ctrl & 0xFFFEFFFF) |
+		(param->AhbArbitrationXbarCtrlMemInitDone << 16));
 }
 
 static void sdram_lock_carveouts(const struct sdram_params *param,

@@ -19,15 +19,6 @@
 #include <soc/sdram.h>
 #include <soc/nvidia/tegra/apbmisc.h>
 
-#define SDRAM_ENABLED_MAGIC 0x4452414D
-
-static const u32 *SDRAM_EN_ADDR = (u32 *)0x4003e000;
-
-uint32_t sdram_init_done(void)
-{
-	return 0 * !!(*SDRAM_EN_ADDR == SDRAM_ENABLED_MAGIC); //FIXME
-}
-
 uint32_t sdram_get_ram_code(void)
 {
 	struct apbmisc *misc = (struct apbmisc *)TEGRA_APB_MISC_BASE;
