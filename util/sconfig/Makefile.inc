@@ -3,7 +3,7 @@ sconfigobj += lex.yy.o
 sconfigobj += sconfig.tab.o
 sconfigobj += main.o
 
-SCONFIGFLAGS += -I$(top)/util/sconfig -I$(objutil)/sconfig
+SCONFIGFLAGS += -I$(top)/util/sconfig -I$(objutil)/sconfig -fcommon
 
 $(objutil)/sconfig:
 	mkdir -p $@

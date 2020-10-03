@@ -78,8 +78,8 @@ endif
 
 HOSTCC := $(if $(shell type gcc 2>/dev/null),gcc,cc)
 HOSTCXX = g++
-HOSTCFLAGS := -g
-HOSTCXXFLAGS := -g
+HOSTCFLAGS := -g -fcommon
+HOSTCXXFLAGS := -g -fcommon
 
 PREPROCESS_ONLY := -E -P -x assembler-with-cpp -undef -I .
 

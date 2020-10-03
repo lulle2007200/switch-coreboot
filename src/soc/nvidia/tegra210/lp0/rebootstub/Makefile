@@ -33,7 +33,7 @@ tegra_rebootstub.elf: tegra_rebootstub.ld start.S i2c.c shutdown.c
 		-mno-unaligned-access -nostdlib -static -O2 -g -ffunction-sections \
 		-fdata-sections -fno-inline -fomit-frame-pointer -Wall \
 		-Wl,--nmagic,--gc-sections,--build-id=none -T tegra_rebootstub.ld \
-		-I ../../../../../include -I ../../../../../arch/arm/include \
+		-I ../../../../../include -I ../../../../../arch/arm/include  -fno-builtin \
 		-o $@ $(filter %.S,$+) $(filter %.c,$+)
 
 tegra_rebootstub.fw: tegra_rebootstub.elf
