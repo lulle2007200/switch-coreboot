@@ -433,9 +433,6 @@ ifeq ($(CONFIG_COMPILER_GCC),y)
 CFLAGS_common += -Wno-unused-but-set-variable
 endif
 
-ifeq ($(CONFIG_WARNINGS_ARE_ERRORS),y)
-CFLAGS_common += -Werror
-endif
 ifneq ($(GDB_DEBUG),)
 CFLAGS_common += -Og
 ADAFLAGS_common += -Og
