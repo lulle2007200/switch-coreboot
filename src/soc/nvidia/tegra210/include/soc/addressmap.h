@@ -104,7 +104,6 @@ enum {
 #define GPU_CARVEOUT_SIZE_MB		1
 #define NVDEC_CARVEOUT_SIZE_MB		1
 #define TSEC_CARVEOUT_SIZE_MB		2
-#define VPR_CARVEOUT_SIZE_MB		8
 
 /* Return total size of DRAM memory configured on the platform. */
 int sdram_size_mb(void);

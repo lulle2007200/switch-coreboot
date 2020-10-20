@@ -353,18 +353,13 @@ void tsec_region_init(void)
 void vpr_region_init(void)
 {
 	struct tegra_mc_regs * const mc = (void *)(uintptr_t)TEGRA_MC_BASE;
-	uintptr_t vpr_base_mib = 0, end = 4096;
-	size_t vpr_size_mib = VPR_CARVEOUT_SIZE_MB;
 
-	/* Get memory layout below 4GiB */
-	memory_in_range(&vpr_base_mib, &end, CARVEOUT_VPR);
-	vpr_base_mib = end - vpr_size_mib;
-
-	/* Set the carveout base address and size */
-	write32(&mc->video_protect_bom, vpr_base_mib << 20);
+	/* Turn off VPR */
+	write32(&mc->video_protect_bom, 0);
 	write32(&mc->video_protect_bom_adr_hi, 0);
-	write32(&mc->video_protect_size_mb, vpr_size_mib);
+	write32(&mc->video_protect_size_mb, 0);
 
-	/* Set the locked bit. This will lock out any other writes! */
-	write32(&mc->video_protect_reg_ctrl, MC_VPR_ALLOW_TZ_WR_ACCESS_ENABLE);
+	/* Set the locked bit. This will lock out any other writes except TZ! */
+	write32(&mc->video_protect_reg_ctrl,
+		  MC_VPR_ALLOW_TZ_WR_ACCESS_ENABLE | MC_VPR_WR_ACCESS_DISABLE);
 }
