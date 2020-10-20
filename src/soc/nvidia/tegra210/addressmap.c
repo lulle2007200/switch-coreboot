@@ -89,7 +89,7 @@ void carveout_range(int id, uintptr_t *base_mib, size_t *size_mib)
 		break;
 	case CARVEOUT_VPR:
 		/*
-		 * A 128MB VPR carveout is felt to be sufficient as per syseng.
+		 * A 8MB VPR carveout is enough for boot. Kernel will later resize it.
 		 * Set it up in vpr_region_init, below.
 		 */
 		carveout_from_regs(base_mib, size_mib,
@@ -366,5 +366,5 @@ void vpr_region_init(void)
 	write32(&mc->video_protect_size_mb, vpr_size_mib);
 
 	/* Set the locked bit. This will lock out any other writes! */
-	write32(&mc->video_protect_reg_ctrl, MC_VPR_WR_ACCESS_DISABLE);
+	write32(&mc->video_protect_reg_ctrl, MC_VPR_ALLOW_TZ_WR_ACCESS_ENABLE);
 }
