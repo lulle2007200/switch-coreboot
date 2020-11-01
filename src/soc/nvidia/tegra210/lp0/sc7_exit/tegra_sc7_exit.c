@@ -18,7 +18,7 @@
 #include "i2c.h"
 #include "uart.h"
 
-#define UARTB_PRINT
+//#define UARTB_PRINT
 //#define COREBOOT_EXTRA
 //#define FUSE_BYPASS_ENABLE
 
