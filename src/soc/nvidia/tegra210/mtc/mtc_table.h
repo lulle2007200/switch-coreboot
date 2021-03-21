@@ -22,10 +22,10 @@
 
 #include <types.h>
 
-typedef struct 
+typedef struct
 {
-	s32 pll_osc_in;
-	s32 pll_out;
+	u32 pll_osc_in;
+	u32 pll_out;
 	u32 pll_feedback_div;
 	u32 pll_input_div;
 	u32 pll_post_div;
@@ -256,8 +256,7 @@ typedef struct
 	u32 emc_mrw15_idx;
 } burst_regs_t;
 
-
-typedef struct 
+typedef struct
 {
 	u32 burst_regs[221];
 	u32 burst_reg_per_ch[8];
@@ -266,7 +265,7 @@ typedef struct
 	u32 shadow_regs_rdwr_train[221];
 } burst_regs_table_t;
 
-typedef struct 
+typedef struct
 {
 	u32 ptfv_dqsosc_movavg_c0d0u0_idx;
 	u32 ptfv_dqsosc_movavg_c0d0u1_idx;

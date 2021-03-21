@@ -19,50 +19,13 @@
 
 #ifndef _MTC_MC_EMC_REGS_H_
 #define _MTC_MC_EMC_REGS_H_
-#define EMC_PMACRO_CMD_PAD_TX_CTRL_CMD_DQ_TX_E_DCC      (1 << 1)
-#define EMC_PMACRO_CMD_PAD_TX_CTRL_CMD_DQSP_TX_E_DCC        (1 << 9)
-#define EMC_PMACRO_CMD_PAD_TX_CTRL_CMD_DQSN_TX_E_DCC        (1 << 16)
-#define EMC_PMACRO_CMD_PAD_TX_CTRL_CMD_CMD_TX_E_DCC     (1 << 24)
-#define EMC_PMACRO_CMD_PAD_TX_CTRL_CMD_DQ_TX_DRVFORCEON     (1 << 26)
-#define DVFS_FGCG_HIGH_SPEED_THRESHOLD              1000
-#define IOBRICK_DCC_THRESHOLD                   2400
-#define DVFS_FGCG_MID_SPEED_THRESHOLD               600
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_DQ_E_IVREF     (1 << 0)
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_DQ_TX_E_DCC        (1 << 1)
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_DQS_E_IVREF        (1 << 8)
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_DQSP_TX_E_DCC      (1 << 9)
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_DQSN_TX_E_DCC      (1 << 16)
-#define EMC_PMACRO_DATA_PAD_TX_CTRL_DATA_CMD_TX_E_DCC       (1 << 24)
-#define EMC_FBIO_CFG5_CMD_TX_DIS                (1 << 8)
+
 /* Clock controller registers */
-#define EMC_CFG_DRAM_CLKSTOP_PD                 (1 << 31)
-#define EMC_CFG_DRAM_CLKSTOP_SR                 (1 << 30)
-#define EMC_CFG_DRAM_ACPD                   (1 << 29)
-#define EMC_CFG_DYN_SELF_REF                    (1 << 28)
-#define EMC_CFG_REQACT_ASYNC                    (1 << 26)
-#define EMC_CFG_AUTO_PRE_WR                 (1 << 25)
-#define EMC_CFG_AUTO_PRE_RD                 (1 << 24)
-#define EMC_CFG_MAM_PRE_WR                  (1 << 23)
-#define EMC_CFG_MAN_PRE_RD                  (1 << 22)
-#define EMC_CFG_PERIODIC_QRST                   (1 << 21)
-#define EMC_CFG_PERIODIC_QRST_SHIFT             (21)
-#define EMC_CFG_EN_DYNAMIC_PUTERM               (1 << 20)
-#define EMC_CFG_DLY_WR_DQ_HALF_CLOCK                (1 << 19)
-#define EMC_CFG_DSR_VTTGEN_DRV_EN               (1 << 18)
-#define EMC_CFG_EMC2MC_CLK_RATIO                (3 << 16)
-#define EMC_CFG_WAIT_FOR_ISP2B_READY_B4_CC          (1 << 9)
-#define EMC_CFG_WAIT_FOR_VI2_READY_B4_CC            (1 << 8)
-#define EMC_CFG_WAIT_FOR_ISP2_READY_B4_CC           (1 << 7)
-#define EMC_CFG_INVERT_DQM                  (1 << 6)
-#define EMC_CFG_WAIT_FOR_DISPLAYB_READY_B4_CC           (1 << 5)
-#define EMC_CFG_WAIT_FOR_DISPLAY_READY_B4_CC            (1 << 4)
-#define EMC_CFG_EMC2PMACRO_CFG_BYPASS_DATAPIPE2         (1 << 3)
-#define EMC_CFG_EMC2PMACRO_CFG_BYPASS_DATAPIPE1         (1 << 2)
-#define EMC_CFG_EMC2PMACRO_CFG_BYPASS_ADDRPIPE          (1 << 1)
 #define CLK_RST_CONTROLLER_PLLM_BASE           0x90
 #define CLK_RST_CONTROLLER_PLLM_MISC2          0x9C
-#define  PLLM_ENABLE (1 << 30)
-#define  PLLM_LOCK   (1 << 27)
+#define  PLLM_ENABLE    (1 << 30)
+#define  PLLM_LOCK      (1 << 27)
+#define  PLLM_EN_LCKDET (1 << 4)
 
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC      0x19C
 #define  EMC_2X_CLK_SRC_SHIFT 29
@@ -72,6 +35,9 @@
 #define CLK_RST_CONTROLLER_CLK_ENB_X_CLR       0x288
 #define CLK_RST_CONTROLLER_PLLMB_BASE          0x5E8
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL  0x664
+#define  EMC_DLL_PLLM_VCOB  (1 << 10)
+#define  EMC_DLL_SWITCH_OUT (1 << 11)
+
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC_SAFE 0x724
 
 /* Memory controller registers */

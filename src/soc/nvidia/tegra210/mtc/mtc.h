@@ -98,6 +98,8 @@ enum EMC_2X_CLK_SRC
 	PLLM_OUT0  = 0x0,
 	PLLC_OUT0  = 0x1,
 	PLLP_OUT0  = 0x2,
+	EMC_CLK_M   = 0x3,
+	EMC_PLLM_UD = 0x4,
 	PLLMB_UD   = 0x5,
 	PLLMB_OUT0 = 0x6,
 	PLLP_UD    = 0x7
