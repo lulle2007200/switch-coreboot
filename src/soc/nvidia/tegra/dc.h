@@ -518,6 +518,9 @@ void WRITEL(unsigned long value, void * p);
 #ifndef __PRE_RAM__
 void display_startup(device_t dev);
 #endif
+#ifdef __RAMSTAGE__
+void display_bl_enable(void);
+#endif
 void dp_init(void * _config);
 void dp_enable(void * _dp);
 unsigned int fb_base_mb(void);

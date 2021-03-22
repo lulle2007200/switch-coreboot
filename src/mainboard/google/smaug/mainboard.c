@@ -205,6 +205,11 @@ void display_startup(device_t dev)
 	dsi_display_startup(dev);
 }
 
+void display_bl_enable(void)
+{
+	;
+}
+
 static void mainboard_enable(device_t dev)
 {
 	dev->ops->init = &mainboard_init;

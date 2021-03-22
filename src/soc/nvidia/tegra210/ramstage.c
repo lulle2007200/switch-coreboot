@@ -22,6 +22,7 @@
 #include <soc/clock.h>
 #include <soc/mmu_operations.h>
 #include <soc/mtc.h>
+#include <soc/nvidia/tegra/dc.h>
 
 static void arm64_arch_timer_init(void)
 {
@@ -74,6 +75,10 @@ void ramstage_entry(void)
 
 	if (tegra210_run_mtc() != 0)
 		printk(BIOS_ERR, "MTC: No training data.\n");
+
+	/* Enable backlight */
+	if (IS_ENABLED(CONFIG_TEGRA210_SEAMLESS_DISPLAY))
+		display_bl_enable();
 
 	/* Jump to boot state machine in common code. */
 	main();
