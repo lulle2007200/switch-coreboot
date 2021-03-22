@@ -81,40 +81,41 @@ void pmic_init(unsigned bus)
 	/* Restore PMIC POR defaults, in case kernel changed 'em */
 	pmic_slam_defaults(bus);
 
-	/* MAX77620: Set SD0 to 1.0V - VDD_CORE */
-	pmic_write_reg_77620(bus, MAX77620_SD0_REG, 0x20, 1);
-	pmic_write_reg_77620(bus, MAX77620_VDVSSD0_REG, 0x20, 1);
+	/* MAX77620: Set SD0 to 1.125V - VDD_CORE */
+	pmic_write_reg_77620(bus, MAX77620_SD0_REG, 0x2A, 1);
+	pmic_write_reg_77620(bus, MAX77620_VDVSSD0_REG, 0x2A, 1);
 
 	/* GPIO 0,1,5,6,7 = GPIO, 2,3,4 = alt mode */
-	pmic_write_reg_77620(bus, MAX77620_AME_GPIO, 0x1c, 1);
+	pmic_write_reg_77620(bus, MAX77620_AME_GPIO, 0x1C, 1);
 
 	/* MAX77620: Disable SD1 Remote Sense, Set SD1 for LPDDR4 to 1.125V */
-	pmic_write_reg_77620(bus, MAX77620_CNFG2SD_REG, 0x04, 1);
-	pmic_write_reg_77620(bus, MAX77620_SD1_REG, 0x2a, 1);
+	pmic_write_reg_77620(bus, MAX77620_CNFG2SD_REG, 0x05, 1);
+	pmic_write_reg_77620(bus, MAX77620_SD1_REG, 0x2A, 1);
 
 	/* CNFG1_L2 = 0xF2 for 3.3v, enabled */
-	pmic_write_reg_77620(bus, MAX77620_CNFG1_L2_REG, 0xf2, 1);
+	pmic_write_reg_77620(bus, MAX77620_CNFG1_L2_REG, 0xF2, 1);
 
 	/* MAX77620: Turn on LDO1 to 1.05V for PEX power */
-	pmic_write_reg_77620(bus, MAX77620_CNFG1_L1_REG, 0xCA, 1);
-	pmic_write_reg_77620(bus, MAX77620_CNFG2_L1_REG, 0xCA, 1);
-
-	/* XXX MAX77621: Set VOUT_REG to 1.0V - CPU VREG */
-	pmic_write_reg_77621(bus, MAX77621_VOUT_REG, 0xB7, 1);
-
-	/* XXX MAX77621: Set VOUT_DVC_REG to 1.0V - CPU VREG DVC */
-	pmic_write_reg_77621(bus, MAX77621_VOUT_DVC_REG, 0xB7, 1);
-
-	/* MAX77621: Set CONTROL1 to 0x20 */
-	pmic_write_reg_77621(bus, MAX77621_CONTROL1_REG, 0x20, 1);
-
-	/* MAX77621: Set CONTROL2 to 0x8D */
-	pmic_write_reg_77621(bus, MAX77621_CONTROL2_REG, 0x8D, 1);
+	//pmic_write_reg_77620(bus, MAX77620_CNFG1_L1_REG, 0xCA, 1);
+	//pmic_write_reg_77620(bus, MAX77620_CNFG2_L1_REG, 0xCA, 1);
 
 	/* MAX77620: Setup/Enable GPIO1 */
 	pmic_write_reg_77620(bus, MAX77620_GPIO1_REG, 0x09, 1);
+
 	/* MAX77620: Setup/Enable GPIO5 - EN_VDD_CPU */
 	pmic_write_reg_77620(bus, MAX77620_GPIO5_REG, 0x09, 1);
+
+	/* MAX77621: Set CONTROL1 to 0x20 */
+	pmic_write_reg_77621(bus, MAX77621_CONTROL1_REG, 0xB0, 1);
+
+	/* MAX77621: Set CONTROL2 to 0x8D */
+	pmic_write_reg_77621(bus, MAX77621_CONTROL2_REG, 0xC1, 1);
+
+	/* XXX MAX77621: Set VOUT_REG to 0.95V - CPU VREG */
+	pmic_write_reg_77621(bus, MAX77621_VOUT_REG, 0xB7, 1);
+
+	/* XXX MAX77621: Set VOUT_DVC_REG to 0.95V - CPU VREG DVC */
+	pmic_write_reg_77621(bus, MAX77621_VOUT_DVC_REG, 0xB7, 1);
 
 	/* Required delay of 2msec */
 	udelay(2000);
