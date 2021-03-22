@@ -109,6 +109,12 @@ config SEC_COMPONENT_SIZE_MB
 	  Maximum size of resident EL3 components in MiB including BL31 and
 	  Secure OS.
 
+config TEGRA210_SEAMLESS_DISPLAY
+	bool "Enable seamless display hand off"
+	default n
+	help
+	  For use when preloader enables display
+
 # Default to 700MHz. This value is based on nv bootloader setting.
 config PLLX_KHZ
 	int

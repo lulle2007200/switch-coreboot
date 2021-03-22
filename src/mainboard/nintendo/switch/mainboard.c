@@ -198,7 +198,7 @@ static void mainboard_init(device_t dev)
 #endif
 
 	/* if panel needs to bringup */
-	if (display_init_required())
+	if (display_init_required() && !IS_ENABLED(CONFIG_TEGRA210_SEAMLESS_DISPLAY))
 		configure_display_blocks();
 
 	powergate_unused_partitions();
@@ -207,6 +207,11 @@ static void mainboard_init(device_t dev)
 void display_startup(device_t dev)
 {
 	dsi_display_startup(dev);
+}
+
+void display_bl_enable(void)
+{
+	gpio_set_mode(GPIO(V0), GPIO_MODE_SPIO);
 }
 
 static void mainboard_enable(device_t dev)

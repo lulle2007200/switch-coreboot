@@ -73,7 +73,7 @@ static void enable_tegra210_dev(device_t dev)
 	if (!IS_ENABLED(CONFIG_MAINBOARD_DO_NATIVE_VGA_INIT))
 		return;
 
-	if (display_init_required())
+	if (display_init_required() && !IS_ENABLED(CONFIG_TEGRA210_SEAMLESS_DISPLAY))
 		display_startup(dev);
 	else
 		printk(BIOS_INFO, "Skipping display init.\n");
@@ -107,7 +107,8 @@ static void enable_plld(void *unused)
 	 * handle PLLD not being configured so enable PLLD unconditionally
 	 * with a default clock rate.
 	 */
-	clock_configure_plld(300 * MHz);
+	if (!IS_ENABLED(CONFIG_TEGRA210_SEAMLESS_DISPLAY))
+		clock_configure_plld(300 * MHz);
 }
 
 /*
