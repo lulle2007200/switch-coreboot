@@ -31,6 +31,13 @@ CONFIG_DEVICETREE:=$(call strip_quotes, $(CONFIG_DEVICETREE))
 ifeq ($(KERNELVERSION),)
 ifeq ($(BUILD_TIMELESS),1)
 KERNELVERSION := TIMELESS
+else ifdef BUILD_VER_SUFFIX
+KERNELVERSION := $(strip $(if $(GIT),\
+	$(shell git describe --dirty --always || git describe),\
+	$(if $(wildcard $(top)/.coreboot-version),\
+		$(shell cat $(top)/.coreboot-version),\
+		coreboot-unknown$(KERNELREVISION))))
+KERNELVERSION := $(shell echo $(KERNELVERSION) | sed 's/-dirty//')-$(BUILD_VER_SUFFIX)
 else
 KERNELVERSION := $(strip $(if $(GIT),\
 	$(shell git describe --dirty --always || git describe),\
