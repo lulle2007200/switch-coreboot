@@ -1088,16 +1088,15 @@ done:
 static void _request_mmr_data(u32 data, bool dual_channel)
 {
 	EMC(EMC_MRR) = data;
-	_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, true, EMC_CH0);
+	_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, true, EMC_CHANNEL0);
 	if (dual_channel)
-		_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, true, EMC_CH1);
+		_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, true, EMC_CHANNEL1);
 }
 
-static u32 _start_periodic_compensation(void)
+static void _start_periodic_compensation(void)
 {
 	EMC(EMC_MPC) = 0x4B;
-
-	return EMC(EMC_MPC);
+	(void)EMC(EMC_MPC);
 }
 
 static bool _timing_update(u32 dual_channel)
@@ -1105,9 +1104,9 @@ static bool _timing_update(u32 dual_channel)
 	bool err = 0;
 
 	EMC(EMC_TIMING_CONTROL) = 1;
-	err = _wait_emc_status(EMC_EMC_STATUS, TIMING_UPDATE_STALLED, false, EMC_CH0);
+	err = _wait_emc_status(EMC_EMC_STATUS, TIMING_UPDATE_STALLED, false, EMC_CHANNEL0);
 	if (dual_channel)
-		err |= _wait_emc_status(EMC_EMC_STATUS, TIMING_UPDATE_STALLED, false, EMC_CH1);
+		err |= _wait_emc_status(EMC_EMC_STATUS, TIMING_UPDATE_STALLED, false, EMC_CHANNEL1);
 
 	return err;
 }
@@ -1120,7 +1119,7 @@ static u32 _get_dram_temperature(void)
 	bool channel1_enabled = (EMC(EMC_FBIO_CFG7) >> 2) & 1;
 	u32 emc_cfg_o = EMC(EMC_CFG);
 
-	_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, false, EMC_CH0);
+	_wait_emc_status(EMC_EMC_STATUS, MRR_DIVLD, false, EMC_CHANNEL0);
 
 	if (emc_cfg_o & 0x20000000)
 	{
@@ -1128,7 +1127,7 @@ static u32 _get_dram_temperature(void)
 		_timing_update(channel1_enabled);
 	}
 
-	_request_mmr_data(0x80040000, EMC_CH0);
+	_request_mmr_data(0x80040000, EMC_CHANNEL0);
 	mr4_0 = EMC(EMC_MRR) & 0xFFFF;
 
 	if (mr4_0 < 0xF001)
@@ -1141,7 +1140,7 @@ static u32 _get_dram_temperature(void)
 
 	if (channel1_enabled)
 	{
-		_request_mmr_data(0x40040000, EMC_CH1);
+		_request_mmr_data(0x40040000, EMC_CHANNEL1);
 		mr4_1 = EMC(EMC_MRR);
 
 		if (mr4_1 < 0xF001)
@@ -1302,19 +1301,6 @@ static void _digital_dll_disable(void)
 			;
 }
 
-static void _digital_dll_enable(u32 channel1_enabled)
-{
-	EMC(EMC_CFG_DIG_DLL) |= 1;
-
-	_timing_update(channel1_enabled);
-
-	while (!(EMC(EMC_CFG_DIG_DLL) & 1))
-		;
-	if (channel1_enabled)
-		while (!(EMC_CH1(EMC_CFG_DIG_DLL) & 1))
-			;
-}
-
 static void _digital_dll_enable_rs(u32 channel1_enabled)
 {
 	EMC(EMC_CFG_DIG_DLL) = (EMC(EMC_CFG_DIG_DLL) & 0xFFFFFF24) | 0x89;
@@ -1374,7 +1360,7 @@ static u32 _dvfs_power_ramp_down(bool flip_backward, emc_table_t *src_emc_table_
 		else
 		{
 			pmacro_dq_pad = (pmacro_dq_pad & 0xFEFEFDFD) | 0x10200;
-			pmacro_cmd_pad_drvforceon = (pmacro_cmd_pad & 0xFEFEFDFD) | 0x4010200;
+			pmacro_cmd_pad_drvforceon = (pmacro_cmd_pad & 0xFAFEFDFD) | 0x4010200;
 			_ccfifo_write(EMC_PMACRO_CMD_PAD_TX_CTRL, pmacro_cmd_pad_drvforceon, (u32)src_clk_per_pc);
 			_ccfifo_write(EMC_PMACRO_DATA_PAD_TX_CTRL, pmacro_dq_pad, 0);
 			_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1 & 0xFEEDFEED, 0);
@@ -1399,7 +1385,7 @@ static u32 _dvfs_power_ramp_down(bool flip_backward, emc_table_t *src_emc_table_
 		ramp_down_wait += 400000;
 		_ccfifo_write(EMC_PMACRO_COMMON_PAD_TX_CTRL, pmacro_common_tx & 0xFFFFFFFA, (u32)src_clk_per_pc);
 		_ccfifo_write(EMC_PMACRO_COMMON_PAD_TX_CTRL, pmacro_common_tx & 0xFFFFFFF0, (u32)src_clk_per_pc);
-		_ccfifo_write(0, 0, (u32)src_clk_per_pc);
+		_ccfifo_write(EMC_INTSTATUS, 0, (u32)src_clk_per_pc);
 	}
 
 	return ramp_down_wait;
@@ -1458,7 +1444,7 @@ static u32 _dvfs_power_ramp_up(bool flip_backward, emc_table_t *src_emc_table_en
 		pmacro_common_tx = dst_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl_idx;
 	}
 
-	pmacro_cmd_pad_data = (pmacro_cmd_pad & 0xFEFEFDFD) | 0x4000000;
+	pmacro_cmd_pad_data = (pmacro_cmd_pad & 0xFAFEFDFD) | 0x4000000;
 
 	if (dst_clock_period >= 1666) // Dvfs mid speed threshold.
 	{
@@ -1480,10 +1466,8 @@ static u32 _dvfs_power_ramp_up(bool flip_backward, emc_table_t *src_emc_table_en
 				_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1 & 0xFE40FE40, dst_clk_per_pc);
 			else
 			{
-				pmacro_cmd_pad_data = (pmacro_cmd_pad & 0xFEFEFDFD) | 0x4010200;
-				pmacro_dq_pad = (pmacro_dq_pad & 0xFEFEFDFD) | 0x10200;
-				_ccfifo_write(EMC_PMACRO_CMD_PAD_TX_CTRL, pmacro_cmd_pad_data, dst_clk_per_pc);
-				_ccfifo_write(EMC_PMACRO_DATA_PAD_TX_CTRL, pmacro_dq_pad, 0);
+				_ccfifo_write(EMC_PMACRO_CMD_PAD_TX_CTRL, (pmacro_cmd_pad & 0xFAFEFDFD) | 0x4010200, dst_clk_per_pc);
+				_ccfifo_write(EMC_PMACRO_DATA_PAD_TX_CTRL, (pmacro_dq_pad & 0xFEFEFDFD) | 0x10200, 0);
 				_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1 & 0xFE40FE40, 0);
 			}
 
@@ -1493,24 +1477,22 @@ static u32 _dvfs_power_ramp_up(bool flip_backward, emc_table_t *src_emc_table_en
 				_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1, dst_clk_per_pc);
 			else
 			{
-				pmacro_cmd_pad_data |= 0x1010202u;
-				pmacro_dq_pad |= 0x1010202;
+				pmacro_cmd_pad_data = pmacro_cmd_pad | 0x5010202;
 				_ccfifo_write(EMC_PMACRO_CMD_PAD_TX_CTRL, pmacro_cmd_pad_data, dst_clk_per_pc);
-				_ccfifo_write(EMC_PMACRO_DATA_PAD_TX_CTRL, pmacro_dq_pad, 0);
+				_ccfifo_write(EMC_PMACRO_DATA_PAD_TX_CTRL, pmacro_dq_pad | 0x1010202, 0);
 				_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1, 0);
 			}
-
-			_ccfifo_write(EMC_FBIO_CFG5, pmacro_cfg5 & 0xFFFFFEFF, dst_clk_per_pc + 9);
 
 			ramp_up_wait = 500000 + (dst_clock_period * 10);
 		}
 		else // 1000 > dst_clock_period < 1666.
 		{
 			_ccfifo_write(EMC_PMACRO_BRICK_CTRL_RFU1, pmacro_rfu1 | 0x6000600, dst_clk_per_pc);
-			_ccfifo_write(EMC_FBIO_CFG5, pmacro_cfg5 & 0xFFFFFEFF, dst_clk_per_pc + 9);
 
 			ramp_up_wait = 200000 + (dst_clock_period * 10);
 		}
+
+		_ccfifo_write(EMC_FBIO_CFG5, pmacro_cfg5 & 0xFFFFFEFF, dst_clk_per_pc + 9);
 	}
 
 	_ccfifo_write(EMC_PMACRO_CMD_PAD_TX_CTRL, pmacro_cmd_pad_data & 0xFBFFFFFF, 5);
@@ -1589,7 +1571,7 @@ static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_tabl
 
 	tdelta = dst_emc_entry->current_dram_clktree_c0d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100);
 	if (tdelta < 0)
-		tdelta = -tdelta;
+		tdelta *= -1;
 	adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100;
@@ -1625,7 +1607,7 @@ calc_td0_0:
 
 	tdelta = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100);
 	if (tdelta < 0)
-		tdelta = -tdelta;
+		tdelta *= -1;
 	if (tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1664,7 +1646,7 @@ calc_td1_0:
 
 		tdelta = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100);
 		if (tdelta < 0)
-			tdelta = -tdelta;
+			tdelta *= -1;
 		if (tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1701,7 +1683,7 @@ calc_td1_1:
 
 		tdelta = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100);
 		if (tdelta < 0)
-			tdelta = -tdelta;
+			tdelta *= -1;
 		if (tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1763,7 +1745,7 @@ calc_dev2:
 
 	tdelta = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100);
 	if (tdelta < 0)
-		tdelta = -tdelta;
+		tdelta *= -1;
 	if (tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1800,7 +1782,7 @@ calc_tmp_td0_1:
 
 	tdelta = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100);
 	if (tdelta < 0)
-		tdelta = -tdelta;
+		tdelta *= -1;
 	if (tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1839,7 +1821,7 @@ calc_tmp_td1_0:
 
 		tdelta = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100);
 		if (tdelta < 0)
-			tdelta = -tdelta;
+			tdelta *= -1;
 		if (tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -1876,7 +1858,7 @@ calc_tmp_td1_1:
 
 		tdelta = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100);
 		if (tdelta < 0)
-			tdelta = -tdelta;
+			tdelta *= -1;
 		if (tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
@@ -2607,7 +2589,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	u32 tFC_lpddr4 = dst_emc_entry->dram_timings.t_fc_lpddr4 * 1000;
 	u32 tZQCAL_lpddr4 = 1000000;
-	if (src_clock_period <= 2000)
+	if (dst_clock_period <= 2000)
 		tZQCAL_lpddr4 -= tFC_lpddr4;
 	s32 tZQCAL_lpddr4_fc_adj = tZQCAL_lpddr4 / dst_clock_period;
 
@@ -2635,20 +2617,20 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	{
 		if (dram_dev_num == TWO_RANK)
 		{
-			_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_MASK, false, EMC_CH0);
+			_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_BOTH_MASK, false, EMC_CHANNEL0);
 			if (channel1_enabled)
-				_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_MASK, false, EMC_CH1);
+				_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_BOTH_MASK, false, EMC_CHANNEL1);
 		}
 		else
 		{
-			_wait_emc_status(EMC_EMC_STATUS, 0x10, false, EMC_CH0);
+			_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_1DEV_MASK, false, EMC_CHANNEL0);
 			if (channel1_enabled)
-				_wait_emc_status(EMC_EMC_STATUS, 0x10, false, EMC_CH1);
+				_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_1DEV_MASK, false, EMC_CHANNEL1);
 		}
 
-		_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, false, EMC_CH0);
+		_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, false, EMC_CHANNEL0);
 		if (channel1_enabled)
-			_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, false, EMC_CH1);
+			_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, false, EMC_CHANNEL1);
 
 		// Reset clock tree delays.
 		dst_emc_entry->current_dram_clktree_c0d0u0 = dst_emc_entry->trained_dram_clktree_c0d0u0;
@@ -2662,7 +2644,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 		u32 adelta = _minerva_periodic_compensation_handler(src_emc_entry, dst_emc_entry, dram_dev_num, channel1_enabled, DVFS_SEQUENCE);
 
-		if (((dst_emc_entry->rate_khz / 1000) << 7) * adelta / 1000000 > dst_emc_entry->tree_margin)
+		if (((dst_emc_entry->rate_khz / 1000) * 128) * adelta / 1000000 > dst_emc_entry->tree_margin)
 			compensate_trimmer_applicable = true;
 	}
 
@@ -2906,24 +2888,24 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 			{
 				switch ( reg_addr )
 				{
-					case EMC_PMACRO_AUTOCAL_CFG_COMMON:
-						reg_val |= 0x10000;
-						break;
-					case EMC_PMACRO_DATA_PAD_TX_CTRL:
-						reg_val &= 0xFEFEFDFD;
-						break;
-					case EMC_PMACRO_CMD_PAD_TX_CTRL:
-						reg_val = (reg_val & 0xFAFEFDFD) | 0x4000000;
-						break;
-					case EMC_PMACRO_BRICK_CTRL_RFU1:
-						reg_val &= 0xF800F800;
-						break;
-					case EMC_PMACRO_COMMON_PAD_TX_CTRL:
-						reg_val &= 0xFFFFFFF0;
-						break;
-					case EMC_TRAINING_CTRL:
-						reg_val |= needs_swap_rank_training << 14;// bit15 is TR_IN_SELF_REFRESH
-						break;
+				case EMC_PMACRO_AUTOCAL_CFG_COMMON:
+					reg_val |= 0x10000;
+					break;
+				case EMC_PMACRO_DATA_PAD_TX_CTRL:
+					reg_val &= 0xFEFEFDFD;
+					break;
+				case EMC_PMACRO_CMD_PAD_TX_CTRL:
+					reg_val = (reg_val & 0xFAFEFDFD) | 0x4000000;
+					break;
+				case EMC_PMACRO_BRICK_CTRL_RFU1:
+					reg_val &= 0xF800F800;
+					break;
+				case EMC_PMACRO_COMMON_PAD_TX_CTRL:
+					reg_val &= 0xFFFFFFF0;
+					break;
+				case EMC_TRAINING_CTRL:
+					reg_val |= needs_swap_rank_training << 14;// bit15 is TR_IN_SELF_REFRESH
+					break;
 				}
 			}
 			else
@@ -3049,7 +3031,6 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Step 9 - LPDDR4.
 	EPRINTF("Step 9");
-
 	EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval_idx & 0xFF000000;
 	EMC(EMC_ZCAL_WAIT_CNT) = dst_emc_entry->burst_regs.emc_zcal_wait_cnt_idx & 0xFFFFF800;
 	EMC(EMC_DBG) = emc_dbg_o | 0x40000002;
@@ -3072,12 +3053,11 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		_ccfifo_write(EMC_DBG, (emc_dbg_o & 0xF3FFFFFF) | 0x4000000, 0);
 	}
 
-
 	// Step 10 - Self refresh
 	EPRINTF("Step 10");
 	_ccfifo_write(EMC_SELF_REF, 0x101, 0);
 
-	if (!needs_ca_or_cavref_training && (src_clock_period <= 2000))
+	if (!needs_ca_or_cavref_training && (dst_clock_period <= 2000))
 	{
 		_ccfifo_write(EMC_MRW3, mr13_flip_fspwr ^ 0x40, 0);
 		_ccfifo_write(EMC_MRW6, (src_emc_entry->burst_regs.emc_mrw6_idx & 0xC0C0) | (dst_emc_entry->burst_regs.emc_mrw6_idx & 0xFFFF3F3F), 0);
@@ -3146,7 +3126,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Step 13 - Ramp up.
 	EPRINTF("Step 13");
-	ramp_up_wait = _dvfs_power_ramp_up(false, src_emc_entry, dst_emc_entry, needs_training & 0xFF, dst_clock_period);
+	ramp_up_wait = _dvfs_power_ramp_up(false, src_emc_entry, dst_emc_entry, needs_training, dst_clock_period);
 
 	_ccfifo_write(EMC_DBG, emc_dbg_val, 0);
 
@@ -3175,82 +3155,64 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	EPRINTF("Step 15");
 	if (!needs_ca_or_cavref_training)
 	{
-		s32 zq_latch_dvfs_wait_time = 0;
-		s32 T_PDEX_timing_final = 0;
-		s32 T_PDEX_timing = div_o3(dst_emc_entry->dram_timings.t_pdex * 1000, dst_clock_period);
+		s32 zq_latch_dvfs_wait_time;
+		u32 T_PDEX_timing = div_o3(dst_emc_entry->dram_timings.t_pdex * 1000, dst_clock_period);
 
-		if (src_clock_period > 2000)
-			zq_latch_dvfs_wait_time = (s32)tZQCAL_lpddr4_fc_adj - T_PDEX_timing;
+		if (dst_clock_period > 2000)
+			zq_latch_dvfs_wait_time = (s32)tZQCAL_lpddr4_fc_adj - (s32)T_PDEX_timing;
 		else
 			zq_latch_dvfs_wait_time =
 				(s32)tZQCAL_lpddr4_fc_adj - (ramp_up_wait + ramp_down_wait) / dst_clock_period;
 
 		if (dram_dev_num == ONE_RANK)
 		{
-			if (T_PDEX_timing < 0)
-					T_PDEX_timing = 0;
-
-			if (src_clock_period > 2000)
+			if (dst_clock_period > 2000)
 				_ccfifo_write(EMC_ZQ_CAL, 0x80000001, T_PDEX_timing);
 
 			if (!needs_tristate_training)
-			{
 				_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) | 0xC000000, T_PDEX_timing);
-				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
-				_ccfifo_write(EMC_REF, 0, 0);
-			}
+
 			emc_zq_cal = 0x80000002;
-			if (zq_latch_dvfs_wait_time < 0)
-				zq_latch_dvfs_wait_time = 0;
 		}
 		else if (zcal_resistor_shared)
 		{
-			if (src_clock_period > 2000)
-			{
-				T_PDEX_timing_final = T_PDEX_timing;
-				if (T_PDEX_timing < 0)
-					T_PDEX_timing_final = 0;
-				_ccfifo_write(EMC_ZQ_CAL, 0x80000001, T_PDEX_timing_final);
-			}
+			if (dst_clock_period > 2000)
+				_ccfifo_write(EMC_ZQ_CAL, 0x80000001, T_PDEX_timing);
 
-			T_PDEX_timing_final = zq_latch_dvfs_wait_time + T_PDEX_timing;
+			s32 T_PDEX_timing_final = zq_latch_dvfs_wait_time + (s32)T_PDEX_timing;
 
-			if ((zq_latch_dvfs_wait_time + T_PDEX_timing) < 0)
+			if (T_PDEX_timing_final < 0)
 				T_PDEX_timing_final = 0;
 
 			_ccfifo_write(EMC_ZQ_CAL, 0x80000002, T_PDEX_timing_final);
 			_ccfifo_write(EMC_ZQ_CAL, 0x40000001, 0);
 
 			if (!needs_tristate_training)
-			{
 				_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) | 0xC000000, 0);
-				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
-				_ccfifo_write(EMC_REF, 0, 0);
-			}
 
 			emc_zq_cal = 0x40000002;
 			zq_latch_dvfs_wait_time = 1000000 / dst_clock_period;
 		}
 		else
 		{
-			if (T_PDEX_timing < 0)
-				T_PDEX_timing = 0;
-
-			if (src_clock_period > 2000)
+			if (dst_clock_period > 2000)
 				_ccfifo_write(EMC_ZQ_CAL, 1, T_PDEX_timing);
 
 			if (!needs_tristate_training)
-			{
 				_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) | 0xC000000, T_PDEX_timing);
-				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
-				_ccfifo_write(EMC_REF, 0, 0);
-			}
 
 			emc_zq_cal = 2;
-
-			if (zq_latch_dvfs_wait_time < 0)
-				zq_latch_dvfs_wait_time = 0;
 		}
+
+		// Disable self-refresh.
+		if (!needs_tristate_training)
+		{
+			_ccfifo_write(EMC_SELF_REF, 0, 0);
+			_ccfifo_write(EMC_REF, 0, 0);
+		}
+
+		if (zq_latch_dvfs_wait_time < 0)
+			zq_latch_dvfs_wait_time = 0;
 
 		_ccfifo_write(EMC_ZQ_CAL, emc_zq_cal, (u32)zq_latch_dvfs_wait_time);
 	}
@@ -3335,40 +3297,19 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		_ccfifo_write(EMC_ZQ_CAL, 0x80000001, 0);
 		_ccfifo_write(EMC_ZQ_CAL, 0x80000002, 1000000 / src_clock_period);
 
-		if (zcal_resistor_shared && dram_dev_num == TWO_RANK)
+		if ((!needs_ca_or_cavref_training || needs_swap_rank_training) && dram_dev_num == TWO_RANK)
 		{
-			if (!needs_ca_or_cavref_training || needs_swap_rank_training)
-			{
-				_ccfifo_write(EMC_ZQ_CAL, 0x40000001, 0);
-				_ccfifo_write(EMC_ZQ_CAL, 0x40000002, 1000000 / src_clock_period);
-				if (!needs_ca_or_cavref_training)
-					_ccfifo_write(EMC_MRW3, ((mr13_flip_fspop ^ 0xC0) & 0xF3FFFFF7) | 0xC000000, 0);
-			}
-
-			_ccfifo_write(EMC_SELF_REF, 0x100, 0);
-
-			goto step_19_2;
-		}
-		else if (dram_dev_num == TWO_RANK)
-		{
-			if (needs_ca_or_cavref_training && !needs_swap_rank_training)
-			{
-				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
-
-				goto step_19_2;
-			}
 
 			_ccfifo_write(EMC_ZQ_CAL, 0x40000001, 0);
 			_ccfifo_write(EMC_ZQ_CAL, 0x40000002, 1000000 / src_clock_period);
 		}
 
 		if (!needs_ca_or_cavref_training)
-			_ccfifo_write(EMC_MRW3, ((mr13_flip_fspop ^ 0xC0) & 0xF3FFFFF7) | 0xC000000, 0);
+			_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) ^ 0xC0000C0, 0);
 
-		_ccfifo_write(EMC_SELF_REF, 0x100, 0);
+		_ccfifo_write(EMC_SELF_REF, 0, 0);
 	}
 
-step_19_2:
 	// Step 19.2.
 	EPRINTF("Step 19.2");
 	if (bg_regulator_mode_change)
@@ -3425,14 +3366,23 @@ step_19_2:
 
 	// Step 23 - Clock Change.
 	EPRINTF("Step 23");
+	// During training save current clock.
 	if (needs_tristate_training)
 	{
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_SAFE) = (u32)CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
-		_change_dll_src(src_emc_entry, (u32)CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC));
+		u32 emc_clk_src = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_SAFE) = emc_clk_src;
+		_change_dll_src(src_emc_entry, emc_clk_src);
 	}
-	EMC(EMC_CFG_DIG_DLL) = (EMC(EMC_CFG_DIG_DLL) & 0xFFFFFF24) | 0x88;
 
+	// Set CFG_DLL_MODE to RUN_PERIODIC.
+	EMC(EMC_CFG_DIG_DLL) = (EMC(EMC_CFG_DIG_DLL) & 0xFFFFFF24) | 0x88;
+	(void)EMC(EMC_FBIO_CFG7);
+	(void)MC(MC_EMEM_ADR_CFG);
+	(void)EMC(EMC_INTSTATUS);
+
+	// Do clock change.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = selected_clk_src_emc;
+	(void)CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
 
 	if (_wait_emc_status(EMC_INTSTATUS, CLKCHANGE_COMPLETE_INT, true, 0))
 		return 4; // Clkchange handshake timeout error.
@@ -3441,6 +3391,7 @@ step_19_2:
 	EPRINTF("Step 24");
 	if (needs_tristate_training)
 	{
+		(void)MC(MC_EMEM_ADR_CFG);
 		emc_dbg_val = EMC(EMC_DBG);
 		EMC(EMC_DBG) |= 1;
 
@@ -3534,7 +3485,6 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 	u32 needs_training_emc_table[8] = {0};
 
 	u32 needs_training = dst_emc_entry->needs_training;
-	bool dual_channel = (EMC(EMC_FBIO_CFG7) >> 1) & ((EMC(EMC_FBIO_CFG7) >> 2) & 1);
 
 	 // Must start as true.
 	if (train_ram_patterns)
@@ -3549,29 +3499,21 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 		train_ram_patterns = false;
 	}
 
-	if (needs_training && !dst_emc_entry->trained)
+	if (!dst_emc_entry->trained)
 	{
-		needs_training_idx = needs_training & 3;
-
 		if (needs_training & 3)
 		{
-			needs_training_idx = 1;
-			needs_training_emc_table[0] = needs_training & 0x203;
+			needs_training_emc_table[needs_training_idx++] = needs_training & 0x203;
 			if (MC(MC_EMEM_ADR_CFG) & 1) // if mapping W8 (1KB page).
-			{
-				needs_training_idx = 2;
-				needs_training_emc_table[1] = needs_training & 0x303;
-			}
+				needs_training_emc_table[needs_training_idx++] = needs_training & 0x303;
 		}
 
-		if (MC(MC_EMEM_ADR_CFG) & 1 && needs_training & 0xC)
+		if (needs_training & 0xC)
 		{
-			needs_training_emc_table[needs_training_idx] = needs_training & 0x20C;
-			needs_training_emc_table[needs_training_idx + 1] = needs_training & 0x204;
-			needs_training_idx += 2;
-		}
-		else if (needs_training & 0xC)
 			needs_training_emc_table[needs_training_idx++] = needs_training & 0x20C;
+			if (MC(MC_EMEM_ADR_CFG) & 1)
+				needs_training_emc_table[needs_training_idx++] = needs_training & 0x204;
+		}
 
 		if (needs_training & 0xF0)
 			needs_training_emc_table[needs_training_idx++] = needs_training & 0x2F0;
@@ -3579,6 +3521,8 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 		for (u32 i = 0; needs_training_idx > i; i++) // Runs more than once for needs_training & 0xF
 		{
 			_minerva_set_clock(src_emc_entry, dst_emc_entry, needs_training_emc_table[i], selected_clk_src_emc);
+
+			bool dual_channel = (EMC(EMC_FBIO_CFG7) >> 1) & ((EMC(EMC_FBIO_CFG7) >> 2) & 1);
 
 			EMC(EMC_DBG) = (EMC(EMC_DBG) & 0xF3FFFFFF) | 0x8000000;
 			EMC(EMC_CFG_UPDATE) = (EMC(EMC_CFG_UPDATE) & 0xFFFFFFF9) | 4;
@@ -3605,10 +3549,10 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 			EMC(EMC_TRPAB) = src_emc_entry->burst_regs.emc_trpab_idx;
 
 			_timing_update(dual_channel);
-
 		}
-		dst_emc_entry->trained = 1;
+
 		EPRINTF("Trained");
+		dst_emc_entry->trained = 1;
 	}
 
 	if (switch_rate)
@@ -3672,73 +3616,71 @@ u32 minerva_do_periodic_compensation(emc_table_t *mtc_table_entry)
 {
 	if (mtc_table_entry && mtc_table_entry->periodic_training)
 	{
-		u32 val = 0;
 		u32  dram_dev_num = (MC(MC_EMEM_ADR_CFG) & 1) + 1;
+		u32  pd_mask = (dram_dev_num == TWO_RANK) ? IN_POWERDOWN_BOTH_MASK : IN_POWERDOWN_1DEV_MASK;
 		bool channel1_enabled = (mtc_table_entry->burst_regs.emc_fbio_cfg7_idx >> 2) & 1;
 
-		//u32 emc_dbg_o = EMC(EMC_DBG);
+		(void)EMC(EMC_DBG);
+
+		// Safekeep current config.
 		u32 emc_cfg_o = EMC(EMC_CFG);
-		u32 emc_cfg = emc_cfg_o & 0xFFFFFFF;
+		u32 emc_cfg_dig_dll_o = EMC(EMC_CFG_DIG_DLL);
+		u32 emc_cfg_update_o = EMC(EMC_CFG_UPDATE);
 
-		// Step 1 - Disable other power features.
-		EMC(EMC_CFG) = emc_cfg;
+		// Step 1 - Disable digital DLL.
+		EMC(EMC_CFG_DIG_DLL) = emc_cfg_dig_dll_o & 0xFFFFFFFE;
 
-		_digital_dll_disable();
+		// Step 1.2 - Always update auto cal in clock change.
+		EMC(EMC_CFG_UPDATE) = (emc_cfg_update_o & 0xFFFFF9FF) | 0x400;
 
-		if (dram_dev_num == TWO_RANK)
-		{
-			_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_MASK, 0, EMC_CH0);
-			if (channel1_enabled)
-				_wait_emc_status(EMC_EMC_STATUS, IN_POWERDOWN_MASK, 0, EMC_CH1);
-		}
-		else
-		{
-			_wait_emc_status(EMC_EMC_STATUS, 0x10, 0, 0);
-			if (channel1_enabled)
-				_wait_emc_status(EMC_EMC_STATUS, 0x10, 0, EMC_CH1);
-		}
+		// Step 1.3 - Disable other power features.
+		EMC(EMC_CFG) = emc_cfg_o & 0xFFFFFFF;
 
-		_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, 0, EMC_CH0);
+		// Timing update and wait for everything to power down.
+		_timing_update(channel1_enabled);
+
+		_wait_emc_status(EMC_EMC_STATUS, pd_mask, 0, EMC_CHANNEL0);
 		if (channel1_enabled)
-			_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, 0, EMC_CH1);
+			_wait_emc_status(EMC_EMC_STATUS, pd_mask, 0, EMC_CHANNEL1);
 
-		// Wait for request FIFO to get empty.
-		_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, EMC_CH0); //v1.6
+		_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, 0, EMC_CHANNEL0);
 		if (channel1_enabled)
-			_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, EMC_CH1); //v1.6
+			_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, 0, EMC_CHANNEL1);
 
-		u32 emc_cfg_update = EMC(EMC_CFG_UPDATE);
-		EMC(EMC_CFG_UPDATE) = (emc_cfg_update & 0xFFFFF9FF) | 0x400;
+		_wait_emc_status(EMC_CFG_DIG_DLL, 1, 0, EMC_CHANNEL0);
+		if (channel1_enabled)
+			_wait_emc_status(EMC_CFG_DIG_DLL, 1, 0, EMC_CHANNEL1);
 
 		// Step 2 - Osc kick off - this assumes training and dvfs have set correct MR23.
 		_start_periodic_compensation();
 
 		// Step 3 - Let dram capture its clock tree delays.
-		udelay(1000 * _actual_osc_clocks(mtc_table_entry->run_clocks) / mtc_table_entry->rate_khz + 1);
+		udelay(1000 * _actual_osc_clocks(mtc_table_entry->run_clocks) / mtc_table_entry->rate_khz + 2);
 
 		// Step 4 - Check delta wrt previous values (save value if margin exceeds what is set in table).
 		u32 adelta = _minerva_update_clock_tree_delay(mtc_table_entry, mtc_table_entry, dram_dev_num, channel1_enabled, PERIODIC_TRAINING_UPDATE);
 
 		// Step 5 - Apply compensation w.r.t. trained values (if clock tree has drifted more than the set margin).
-		if (adelta && ((mtc_table_entry->rate_khz / 1000) << 7) * adelta / 1000000 > mtc_table_entry->tree_margin)
+		if (adelta && ((mtc_table_entry->rate_khz / 1000) * 128) * adelta / 1000000 > mtc_table_entry->tree_margin)
 		{
 			for (u32 i = 0; i < 10; i++)
 			{
-				val = _minerva_apply_periodic_compensation_trimmer(mtc_table_entry, periodic_training_addr[i]);
-				EMC(periodic_training_addr[i]) = val;
+				EMC(periodic_training_addr[i]) =
+					_minerva_apply_periodic_compensation_trimmer(mtc_table_entry, periodic_training_addr[i]);
 			}
 		}
 
+		// Step 6 - Restore other power features.
 		EMC(EMC_CFG) = emc_cfg_o;
 
-		// Step 6 - Timing update to apply the new trimmers.
+		// Step 6.1 - Restore the DLL.
+		EMC(EMC_CFG_DIG_DLL) = emc_cfg_dig_dll_o;
+
+		// Step 6.2 - Timing update for applying the new trimmers.
 		_timing_update(channel1_enabled);
 
-		// Step 6.1 - Restore the UPDATE_DLL_IN_UPDATE field.
-		EMC(EMC_CFG_UPDATE) = emc_cfg_update;
-
-		// Step 6.2 - Restore the DLL.
-		_digital_dll_enable(channel1_enabled);
+		// Step 6.3 - Restore the UPDATE_DLL_IN_UPDATE field.
+		EMC(EMC_CFG_UPDATE) = emc_cfg_update_o;
 	}
 
 	return 0;
