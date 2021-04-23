@@ -27,9 +27,8 @@
 #include "mtc/mtc_table.h"
 #include "mtc/mtc_switch.h"
 
-#define MAX_MTC_TABLE_ENTRIES	20
-#define MTC_TABLE_ENTRY_SIZE	4880
-#define MTC_TABLE_MAX_SIZE	(MAX_MTC_TABLE_ENTRIES * MTC_TABLE_ENTRY_SIZE)
+#define MTC_TABLE_ENTRIES	10 /* Max allowed: 16 */
+#define MTC_TABLE_SIZE		(MTC_TABLE_ENTRIES * EMC_TABLE_ENTRY_SIZE_R7)
 
 #define OP_SWITCH 0
 #define OP_TRAIN  1
@@ -44,9 +43,9 @@ int tegra210_run_mtc(void)
 	raw_write_cptr_el3(0);
 	raw_write_cpacr_el1(3 << 20);
 
-	mtc_cfg.table_entries = EMC_TABLE_SIZE_R7 / sizeof(emc_table_t);
+	mtc_cfg.table_entries = MTC_TABLE_ENTRIES;
 
-	void *cbmem_tab = cbmem_add(CBMEM_ID_MTC, EMC_TABLE_SIZE_R7);
+	void *cbmem_tab = cbmem_add(CBMEM_ID_MTC, MTC_TABLE_SIZE);
 	if (cbmem_tab == NULL) {
 		printk(BIOS_ERR, "MTC table allocation in cbmem failed!\n");
 		return -1;
@@ -57,14 +56,14 @@ int tegra210_run_mtc(void)
 	switch (ram_code())
 	{
 	case 1:
-		memcpy(cbmem_tab, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		memcpy(cbmem_tab, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, MTC_TABLE_SIZE);
 		break;
 	case 0:
 	case 2:
 	case 3:
 	case 4:
 	default:
-		memcpy(cbmem_tab, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		memcpy(cbmem_tab, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, MTC_TABLE_SIZE);
 		break;
 	}
 
@@ -149,10 +148,10 @@ void soc_add_mtc(struct lb_header *header)
 	mtc->size = sizeof(*mtc);
 
 	mtc->range_start = (uintptr_t)cbmem_find(CBMEM_ID_MTC);
-	mtc->range_size = EMC_TABLE_SIZE_R7;
+	mtc->range_size = MTC_TABLE_SIZE;
 }
 
 size_t get_mtc_size()
 {
-	return EMC_TABLE_SIZE_R7;
+	return MTC_TABLE_SIZE;
 }

@@ -2593,6 +2593,9 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		tZQCAL_lpddr4 -= tFC_lpddr4;
 	s32 tZQCAL_lpddr4_fc_adj = tZQCAL_lpddr4 / dst_clock_period;
 
+	(void)EMC(EMC_CFG);
+	(void)EMC(EMC_AUTO_CAL_CONFIG);
+
 	// Step 1 - Pre DVFS SW sequence.
 	EPRINTF("Step 1");
 	emc_dbg_o = EMC(EMC_DBG);
@@ -2605,6 +2608,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	// Step 1.2 - Disable AUTOCAL temporarily.
 	EPRINTF("Step 1.2");
 	EMC(EMC_AUTO_CAL_CONFIG) = (dst_emc_entry->emc_auto_cal_config & 0x7FFFF9FF) | 0x600;
+	(void)EMC(EMC_AUTO_CAL_CONFIG);
 
 	// Step 1.3 - Disable other power features.
 	EPRINTF("Step 1.3");
@@ -2799,6 +2803,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		EMC(EMC_W2P) = W2P_war;
 		EMC(EMC_TRPAB) = TRPab_war;
 		EMC(EMC_DBG) = emc_dbg_o;
+		(void)EMC(EMC_TRPAB);
 		udelay(1);
 	}
 
@@ -3028,6 +3033,9 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 				MC(la_scale_regs_mc_addr_table[i]) = dst_emc_entry->la_scale_regs[i];
 		}
 	}
+
+	// Flush all the burst register writes.
+	wmb();
 
 	// Step 9 - LPDDR4.
 	EPRINTF("Step 9");
@@ -3376,6 +3384,8 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Set CFG_DLL_MODE to RUN_PERIODIC.
 	EMC(EMC_CFG_DIG_DLL) = (EMC(EMC_CFG_DIG_DLL) & 0xFFFFFF24) | 0x88;
+	(void)EMC(EMC_CFG_DIG_DLL);
+
 	(void)EMC(EMC_FBIO_CFG7);
 	(void)MC(MC_EMEM_ADR_CFG);
 	(void)EMC(EMC_INTSTATUS);
