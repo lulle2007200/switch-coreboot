@@ -41,7 +41,6 @@
 #define EMC_CH1(off) (*((volatile uint32_t *)(EMC1_BASE + (uintptr_t)off)))
 /* End of addresses and access macros */
 
-#define EMC_TABLE_SIZE_R7         49280
 #define EMC_TABLE_ENTRY_SIZE_R7   4928
 #define EMC_STATUS_UPDATE_TIMEOUT 1000
 #define EMC_PERIODIC_TRAIN_MS     100
