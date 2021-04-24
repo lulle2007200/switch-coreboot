@@ -1608,7 +1608,7 @@ calc_td0_0:
 	tdelta = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
-	if (tdelta > adelta)
+	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100;
@@ -1647,7 +1647,7 @@ calc_td1_0:
 		tdelta = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
-		if (tdelta > adelta)
+		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100;
@@ -1684,7 +1684,7 @@ calc_td1_1:
 		tdelta = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
-		if (tdelta > adelta)
+		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100;
@@ -1746,7 +1746,7 @@ calc_dev2:
 	tdelta = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
-	if (tdelta > adelta)
+	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100;
@@ -1783,7 +1783,7 @@ calc_tmp_td0_1:
 	tdelta = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
-	if (tdelta > adelta)
+	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100;
@@ -1822,7 +1822,7 @@ calc_tmp_td1_0:
 		tdelta = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
-		if (tdelta > adelta)
+		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100;
@@ -1859,7 +1859,7 @@ calc_tmp_td1_1:
 		tdelta = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
-		if (tdelta > adelta)
+		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100;
@@ -1997,17 +1997,18 @@ static u32 _minerva_apply_periodic_compensation_trimmer(emc_table_t *mtc_table_e
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_2:
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_3:
 	case EMC_DATA_BRLSHFT_0:
-		tree_delta[0] = (mtc_table_entry->current_dram_clktree_c0d0u0 - mtc_table_entry->trained_dram_clktree_c0d0u0) << 7;
-		tree_delta[1] = (mtc_table_entry->current_dram_clktree_c0d0u1 - mtc_table_entry->trained_dram_clktree_c0d0u1) << 7;
-		tree_delta[2] = (mtc_table_entry->current_dram_clktree_c1d0u0 - mtc_table_entry->trained_dram_clktree_c1d0u0) << 7;
-		tree_delta[3] = (mtc_table_entry->current_dram_clktree_c1d0u1 - mtc_table_entry->trained_dram_clktree_c1d0u1) << 7;
+		tree_delta[0] = (mtc_table_entry->current_dram_clktree_c0d0u0 - mtc_table_entry->trained_dram_clktree_c0d0u0) * 128;
+		tree_delta[1] = (mtc_table_entry->current_dram_clktree_c0d0u1 - mtc_table_entry->trained_dram_clktree_c0d0u1) * 128;
+		tree_delta[2] = (mtc_table_entry->current_dram_clktree_c1d0u0 - mtc_table_entry->trained_dram_clktree_c1d0u0) * 128;
+		tree_delta[3] = (mtc_table_entry->current_dram_clktree_c1d0u1 - mtc_table_entry->trained_dram_clktree_c1d0u1) * 128;
 		tree_delta_taps[0] = (tree_delta[0] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[1] = (tree_delta[1] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[2] = (tree_delta[2] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[3] = (tree_delta[3] * (s32)dst_rate_mhz) / 1000000;
 		for (u32 i = 0; i < 4; i++)
 		{
-			if ((tree_delta_taps[i] > mtc_table_entry->tree_margin) || (tree_delta_taps[i] < (-1 * mtc_table_entry->tree_margin)))
+			// Check if tap exceeds margins and apply it.
+			if ((tree_delta_taps[i] > (s32)mtc_table_entry->tree_margin) || (tree_delta_taps[i] < (-1 * (s32)mtc_table_entry->tree_margin)))
 			{
 				new_trim[i * 2]     += tree_delta_taps[i];
 				new_trim[i * 2 + 1] += tree_delta_taps[i];
@@ -2029,17 +2030,18 @@ static u32 _minerva_apply_periodic_compensation_trimmer(emc_table_t *mtc_table_e
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_2:
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_3:
 	case EMC_DATA_BRLSHFT_1:
-		tree_delta[0] = (mtc_table_entry->current_dram_clktree_c0d1u0 - mtc_table_entry->trained_dram_clktree_c0d1u0) << 7;
-		tree_delta[1] = (mtc_table_entry->current_dram_clktree_c0d1u1 - mtc_table_entry->trained_dram_clktree_c0d1u1) << 7;
-		tree_delta[2] = (mtc_table_entry->current_dram_clktree_c1d1u0 - mtc_table_entry->trained_dram_clktree_c1d1u0) << 7;
-		tree_delta[3] = (mtc_table_entry->current_dram_clktree_c1d1u1 - mtc_table_entry->trained_dram_clktree_c1d1u1) << 7;
+		tree_delta[0] = (mtc_table_entry->current_dram_clktree_c0d1u0 - mtc_table_entry->trained_dram_clktree_c0d1u0) * 128;
+		tree_delta[1] = (mtc_table_entry->current_dram_clktree_c0d1u1 - mtc_table_entry->trained_dram_clktree_c0d1u1) * 128;
+		tree_delta[2] = (mtc_table_entry->current_dram_clktree_c1d1u0 - mtc_table_entry->trained_dram_clktree_c1d1u0) * 128;
+		tree_delta[3] = (mtc_table_entry->current_dram_clktree_c1d1u1 - mtc_table_entry->trained_dram_clktree_c1d1u1) * 128;
 		tree_delta_taps[0] = (tree_delta[0] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[1] = (tree_delta[1] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[2] = (tree_delta[2] * (s32)dst_rate_mhz) / 1000000;
 		tree_delta_taps[3] = (tree_delta[3] * (s32)dst_rate_mhz) / 1000000;
 		for (u32 i = 0; i < 4; i++)
 		{
-			if ((tree_delta_taps[i] > mtc_table_entry->tree_margin) || (tree_delta_taps[i] < (-1 * mtc_table_entry->tree_margin)))
+			// Check if tap exceeds margins and apply it.
+			if ((tree_delta_taps[i] > (s32)mtc_table_entry->tree_margin) || (tree_delta_taps[i] < (-1 * (s32)mtc_table_entry->tree_margin)))
 			{
 				new_trim[8 + i * 2]     += tree_delta_taps[i];
 				new_trim[8 + i * 2 + 1] += tree_delta_taps[i];
